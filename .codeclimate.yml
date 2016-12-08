@@ -1,0 +1,4 @@
+engines:
+  hlint:
+    enabled: true
+
