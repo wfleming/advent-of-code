@@ -2,7 +2,7 @@ name:                advent2016
 version:             0.1.0.0
 synopsis:            Initial project template from stack
 description:         Please see README.md
-homepage:            https://github.com/wfleming/advent2016#readme
+homepage:            https://github.com/wfleming/advent-of-code-2016
 license:             BSD3
 license-file:        LICENSE
 author:              Will Fleming
@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     D2Lib
                      , D3Lib
+                     , D4Lib
   build-depends:       base >= 4.7 && < 5
                      , parsec
                      , split
@@ -49,6 +50,15 @@ executable d3
                      , parsec
   default-language:    Haskell2010
 
+executable d4
+  hs-source-dirs:      app
+  main-is:             D4.hs
+  ghc-options:         -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , advent2016
+                     , parsec
+  default-language:    Haskell2010
+
 test-suite advent2016-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
@@ -62,4 +72,4 @@ test-suite advent2016-test
 
 source-repository head
   type:     git
-  location: https://github.com/wfleming/advent2016
+  location: https://github.com/wfleming/advent-of-code-2016
