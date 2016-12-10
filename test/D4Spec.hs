@@ -9,7 +9,7 @@ main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = do
+spec = parallel $ do
     describe "valid" $
         it "knows if a room is valid" $ do
             L.valid (L.Room "aaaaa-bbb-z-y-x" 0 "abxyz") `shouldBe` True

@@ -18,15 +18,18 @@ library
   exposed-modules:     D2Lib
                      , D3Lib
                      , D4Lib
+                     , D5Lib
   build-depends:       base >= 4.7 && < 5
                      , parsec
                      , split
+                     , pureMD5
+                     , bytestring
   default-language:    Haskell2010
 
 executable d1
   hs-source-dirs:      app
   main-is:             D1.hs
-  ghc-options:         -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -Wall -Werror -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , advent2016
                      , parsec
@@ -35,7 +38,7 @@ executable d1
 executable d2
   hs-source-dirs:      app
   main-is:             D2.hs
-  ghc-options:         -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -Wall -Werror -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , advent2016
                      , parsec
@@ -44,7 +47,7 @@ executable d2
 executable d3
   hs-source-dirs:      app
   main-is:             D3.hs
-  ghc-options:         -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -Wall -Werror -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , advent2016
                      , parsec
@@ -53,10 +56,18 @@ executable d3
 executable d4
   hs-source-dirs:      app
   main-is:             D4.hs
-  ghc-options:         -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -Wall -Werror -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , advent2016
                      , parsec
+  default-language:    Haskell2010
+
+executable d5
+  hs-source-dirs:      app
+  main-is:             D5.hs
+  ghc-options:         -Wall -Werror -O2 -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , advent2016
   default-language:    Haskell2010
 
 test-suite advent2016-test

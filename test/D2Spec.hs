@@ -9,7 +9,7 @@ main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = do
+spec = parallel $ do
     describe "move" $ do
         it "moves up" $ do
             move 4 U `shouldBe` 1

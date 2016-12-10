@@ -1,0 +1,7 @@
+[package]
+name = "d5"
+version = "0.1.0"
+authors = ["Will Fleming <will@flemi.ng>"]
+
+[dependencies]
+rust-crypto = "^0.2"

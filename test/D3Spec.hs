@@ -9,7 +9,7 @@ main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = do
+spec = parallel $ do
     describe "valid" $
         it "knows if a triangle is valid" $ do
             L.valid (5, 10, 25) `shouldBe` False
