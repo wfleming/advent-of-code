@@ -1,4 +1,3 @@
-{-# ANN letters "HLint: ignore Use String" #-}
 module D4Lib where
 
 import Control.Monad

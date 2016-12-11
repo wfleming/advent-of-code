@@ -20,6 +20,7 @@ library
                      , D4Lib
                      , D5Lib
                      , D6Lib
+                     , D7Lib
                      , Util
   build-depends:       base >= 4.7 && < 5
                      , parsec
@@ -75,6 +76,14 @@ executable d5
 executable d6
   hs-source-dirs:      app
   main-is:             D6.hs
+  ghc-options:         -Wall -Werror -O2 -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , advent2016
+  default-language:    Haskell2010
+
+executable d7
+  hs-source-dirs:      app
+  main-is:             D7.hs
   ghc-options:         -Wall -Werror -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , advent2016
