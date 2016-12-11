@@ -13,15 +13,15 @@ main = do
   let validRooms = filter valid allRooms
   let sectorSum = sum $ map sector validRooms
 
-  putStrLn $ "There were " ++ (show $ length allRooms) ++ " total rooms"
-  putStrLn $ "There were " ++ (show $ length validRooms) ++ " valid rooms"
+  putStrLn $ "There were " ++ show (length allRooms) ++ " total rooms"
+  putStrLn $ "There were " ++ show (length validRooms) ++ " valid rooms"
   putStrLn $ "sum of valid room sectors = " ++ show sectorSum
 
   let decryptedRooms = map decryptRoom validRooms
   let candidates = filter (\(Room n _ _) -> substring "north" n) decryptedRooms
 
   putStrLn "Candidate rooms for North Pole storage:"
-  putStrLn $ unlines $ map (\(Room n s _) -> n ++ " (" ++ (show s) ++ ")") candidates
+  putStrLn $ unlines $ map (\(Room n s _) -> n ++ " (" ++ show s ++ ")") candidates
 
 substring :: String -> String -> Bool
 substring (_:_) [] = False

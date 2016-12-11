@@ -37,7 +37,7 @@ orderedPassword seed = map fst . sortBy sorter $ build [] 0
     build xs _ | length xs >= passwordLength = xs
     build xs i | i > maxStretches = error $ "Too many iterations xs=" ++ show xs ++ " i=" ++ show i
     build xs i = case orderedPassChar seed i of
-        Just (c, ci) -> if ci `elem` (map snd xs)
+        Just (c, ci) -> if ci `elem` map snd xs
             then build xs (i + 1)
             else build ((c, ci) : xs) (i + 1)
         Nothing -> build xs (i + 1)
@@ -54,11 +54,11 @@ passChar seed idx = (!! 5) <$> idxHash seed idx
 orderedPassChar :: String -> Int -> Maybe CharPos
 orderedPassChar seed idx = idxHash seed idx >>= extract
   where
-    extract str = case validPos str of
-        True -> Just (str !! 6, rInt [str !! 5])
-        False -> Nothing
+    extract str = if validPos str
+        then Just (str !! 6, rInt [str !! 5])
+        else Nothing
     rInt = read :: String -> Int
-    validPos str = (isDigit $ str !! 5) && (rInt [str !! 5] < 8)
+    validPos str = isDigit (str !! 5) && rInt [str !! 5] < 8
 
 idxHash :: String -> Int -> Maybe String
 idxHash _ idx | idx > maxStretches = error $ "Too many iterations (might be infinite) idx=" ++ show idx

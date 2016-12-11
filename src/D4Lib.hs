@@ -1,3 +1,4 @@
+{-# ANN letters "HLint: ignore Use String" #-}
 module D4Lib where
 
 import Control.Monad
@@ -24,13 +25,14 @@ calcChecksum :: String -> String
 calcChecksum = map fst . take checksumLength . sortBy compFreq . freq
   where
     compFreq :: Freq -> Freq -> Ordering
-    compFreq (c1, f1) (c2, f2) = case f1 == f2 of
-        True -> compare c1 c2 -- ties should be sorted alphabetically
-        False -> compare f2 f1 -- non-ties are sorted freq-desc
+    compFreq (c1, f1) (c2, f2) = if f1 == f2
+        then compare c1 c2 -- ties should be sorted alphabetically
+        else compare f2 f1 -- non-ties are sorted freq-desc
 
 decryptRoom :: Room -> Room
 decryptRoom (Room n s c) = Room (decryptName n s) s c
 
+-- This is conceptually a list of chars, so I'm ignoring HLint
 letters :: [Char]
 letters = ['a'..'z']
 

@@ -10,17 +10,17 @@ main = hspec spec
 
 spec :: Spec
 spec = parallel $ do
-    describe "transpose" $ do
+    describe "transpose" $
         it "does what I think it does" $ do
             let input = ["abc", "def", "ghi"]
             transpose input `shouldBe` ["adg", "beh", "cfi"]
 
-    describe "fixMessage" $ do
+    describe "fixMessage" $
         it "works" $ do
             let input = ["cbt", "cab", "kat", "xss"]
             fixMessage input `shouldBe` "cat"
 
-    describe "fixModMessage" $ do
+    describe "fixModMessage" $
         it "works" $ do
             let input = ["cbt", "cab", "kat", "kxs", "xss"]
             fixModMessage input `shouldBe` "xbb"

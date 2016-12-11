@@ -25,7 +25,7 @@ spec = parallel $ do
             passChar "abc" 3231929 `shouldBe` Just '1'
             passChar "abc" 5017308 `shouldBe` Just '8'
 
-        it "is a Nothing for a non-matching index" $ do
+        it "is a Nothing for a non-matching index" $
             passChar "abc" 3231928 `shouldBe` Nothing
 
     describe "orderedPassChar" $ do
@@ -33,5 +33,5 @@ spec = parallel $ do
             orderedPassChar "abc" 3231929 `shouldBe` Just ('5', 1)
             orderedPassChar "abc" 5357525 `shouldBe` Just ('e', 4)
 
-        it "is Nothing when idx is invalid" $ do
+        it "is Nothing when idx is invalid" $
             orderedPassChar "abc" 5017308 `shouldBe` Nothing

@@ -27,12 +27,12 @@ walk start moves = fst $ foldl step (start, North) moves
 hitTwice :: (Point, Orientation) -> [Movement] -> [Point] -> Point
 hitTwice (start, _) [] placesBeen = error $ "exhausted moves without seeing any point twice placesBeen=" ++ show (start : placesBeen)
 hitTwice (start, facing) (nextMove : restMoves) placesBeen =
-    case elem start placesBeen of
-        True -> start
-        False -> hitTwice (step (start, facing) nextMove) restMoves (start : placesBeen)
+    if start `elem` placesBeen
+        then start
+        else hitTwice (step (start, facing) nextMove) restMoves (start : placesBeen)
 
 expand :: [Movement] -> [Movement]
-expand moves = concat $ map expandMove moves
+expand = concatMap expandMove
   where
     expandMove (t, n) | n >= 1 = (t, 1) : replicate (n - 1) (Straight, 1)
     expandMove _ = error "accidental negative maybe?"
@@ -54,16 +54,16 @@ step (pos, facing) (moveTurn, moveDist) = (newPos, newDir)
     turn dir Straight = dir
 
     performMove (x, y) North d = (x, y + d)
-    performMove (x, y) South d = performMove (x, y) North (0 - d)
+    performMove (x, y) South d = performMove (x, y) North (negate d)
     performMove (x, y) East d = (x + d, y)
-    performMove (x, y) West d = performMove (x, y) East (0 - d)
+    performMove (x, y) West d = performMove (x, y) East (negate d)
 
 dist :: Point -> Point -> Int
 dist (x1, y1) (x2, y2) = abs(x2 - x1) + abs(y2 - y1)
 
 -- Input is a number of movements separated by spaces
 parseMovements :: Parser [Movement]
-parseMovements = parseMovement `sepBy` (string ", ")
+parseMovements = parseMovement `sepBy` string ", "
 
 -- A movement is a direction & an integral distance
 parseMovement :: Parser Movement
