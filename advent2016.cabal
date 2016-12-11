@@ -22,6 +22,7 @@ library
                      , D6Lib
                      , D7Lib
                      , D8Lib
+                     , D9Lib
                      , Util
   build-depends:       base >= 4.7 && < 5
                      , parsec
@@ -95,6 +96,15 @@ executable d7
 executable d8
   hs-source-dirs:      app
   main-is:             D8.hs
+  ghc-options:         -Wall -Werror -O2 -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , advent2016
+                     , parsec
+  default-language:    Haskell2010
+
+executable d9
+  hs-source-dirs:      app
+  main-is:             D9.hs
   ghc-options:         -Wall -Werror -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , advent2016
