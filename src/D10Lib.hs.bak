@@ -1,0 +1,149 @@
+module D10Lib where
+
+import Control.Monad
+import Data.List
+import Data.Maybe
+import Text.Parsec hiding (Error, parse)
+import Text.Parsec.String
+
+data Dest = DestBot Int | DestOutput Int deriving (Eq, Show)
+
+data AST =
+      ASTValue Int Int -- value X goes to bot Y
+    | ASTBot Int Dest Dest -- bot X gives low to OUT Y, high to OUT Z
+    deriving (Eq, Show)
+
+data Bot = Bot
+    { num :: Int
+    , c1 :: Maybe Int
+    , c2 :: Maybe Int
+    }
+
+instance Eq Bot where
+  (==) n1 n2 = (num n1) == (num n2)
+
+rulesP :: Parser [AST]
+rulesP = many ruleP
+
+ruleP :: Parser AST
+ruleP = do
+    r <- botRuleP <|> valRuleP
+    char '\n'
+    return $ r
+
+botRuleP :: Parser AST
+botRuleP = do
+    void $ string "bot "
+    b <- number
+    void $ string " gives low to "
+    ld <- destIdP
+    void $ string " and high to "
+    hd <- destIdP
+    return $ ASTBot b ld hd
+
+valRuleP :: Parser AST
+valRuleP = do
+    void $ string "value "
+    v <- number
+    void $ string " goes to bot "
+    b <- number
+    return $ ASTValue v b
+
+destIdP :: Parser Dest
+destIdP = do
+    d <- destTypeP
+    void $ space
+    n <- number
+    return (d n)
+
+destTypeP :: Parser (Int -> Dest)
+destTypeP = p' "bot" DestBot <|> p' "output" DestOutput
+  where
+    p' :: String -> (Int -> Dest) -> Parser (Int -> Dest)
+    p' s t = do
+        _ <- string s
+        return t
+
+number :: Parser Int
+number = read <$> many1 digit
+
+-- Determine the path a given card takes through the system
+{-path :: [AST] -> Int -> [Dest]-}
+{-path rules card = first :-}
+  {-where-}
+    {-first = initialBot rules card-}
+
+-- jus the ASTValue rules
+initRules :: [AST] -> [AST]
+initRules = filter isInitRule
+  where
+    isInitRule (ASTValue _ _) = True
+    isInitRule _ = False
+
+-- jus the ASTBot rules
+botRules :: [AST] -> [AST]
+botRules = filter isBotRule
+  where
+    isBotRule (ASTBot _ _ _) = True
+    isBotRule _ = False
+
+initBotIds :: [AST] -> [Int]
+initBotIds = nub . map botId . initRules
+  where
+    botId (ASTValue _ i) = i
+    botId _ = error "That's not a valid value to send to this fn"
+
+initNodes :: [AST] -> [Node]
+initNodes rules = foldl (toNode rules) [] (initRules rules)
+
+class ToNode c where
+    toNode :: [AST] -> [Node] -> c -> [Node]
+
+instance ToNode AST where
+    toNode rules graph (ASTValue cardNum botId) = Card
+          { num = cardNum
+          , out = fromMaybe (toNode rules graph (botRule rules botId)) existBot
+          } : graph
+      where
+        existBot = findNode graph (DestBot botId)
+    toNode rules graph (ASTBot botNum low high) = Bot
+          { num = botNum
+          , lowOut = fromMaybe (toNode rules graph low) existLowNode
+          , highOut = fromMaybe (toNode rules graph high) existHighNode
+          , inputs = binputs
+          } : graph
+      where
+        existLowNode = findNode graph low
+        existHighNode = findNode graph high
+        binputs = map (toNode rules graph) (botInputs rules botNum)
+
+instance ToNode Dest where
+    toNode rules graph (DestBot b) = (toNode rules (botRule rules b)) : graph
+    toNode rules graph (DestOutput o) = Output { num = o } : graph
+
+findNode :: [Node] -> Dest -> Maybe Node
+findNode graph (DestBot b _ _) = find f graph
+  where
+    f (Bot b' _ _ _) = b == b'
+    f _ = False
+findNode graph (DestOutput o) = find f graph
+  where
+    f (Output o') = o == o'
+    f _ = False
+
+-- find all rules that feed into a given bot
+botInputs :: [AST] -> Int -> [AST]
+botInputs rules bNum = filter f rules
+  where
+    f (ASTValue _ b) | b == bNum = True
+    f (ASTBot _ (DestBot d) _) | d == bNum = True
+    f (ASTBot _ _ (DestBot d)) | d == bNum = True
+    f _ = False
+
+-- find the rule defining a bots actions
+botRule :: [AST] -> Int -> AST
+botRule rules bNum = fromMaybe (error "bad bot num") $ find f rules
+  where
+    f (ASTBot b _ _) = b == bNum
+    f _ = False
+

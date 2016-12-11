@@ -10,15 +10,15 @@ main = hspec spec
 
 spec :: Spec
 spec = parallel $ do
-    -- These MD5 specs are slow: turned off except when I need to test them
+    describe "password" $
+        it "finds the password" $ do
+            pendingWith "SLOW TEST"
+            password "abc" `shouldBe` "18f47a30"
 
-    {-describe "password" $-}
-        {-it "finds the password" $ do-}
-            {-password "abc" `shouldBe` "18f47a30"-}
-
-    {-describe "orderedPassword" $ do-}
-        {-it "finds the password" $ do-}
-            {-orderedPassword "abc" `shouldBe` "05ace8e3"-}
+    describe "orderedPassword" $ do
+        it "finds the password" $ do
+            pendingWith "SLOW TEST"
+            orderedPassword "abc" `shouldBe` "05ace8e3"
 
     describe "passChar" $ do
         it "is a Just char for a matching index" $ do
