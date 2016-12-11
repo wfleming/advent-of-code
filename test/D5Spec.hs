@@ -10,7 +10,7 @@ main = hspec spec
 
 spec :: Spec
 spec = parallel $ do
-    -- These MD5 specs are slowwww: turned off except when I need to test them
+    -- These MD5 specs are slow: turned off except when I need to test them
 
     {-describe "password" $-}
         {-it "finds the password" $ do-}

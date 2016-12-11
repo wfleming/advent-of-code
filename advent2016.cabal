@@ -22,7 +22,7 @@ library
   build-depends:       base >= 4.7 && < 5
                      , parsec
                      , split
-                     , pureMD5
+                     , cryptohash
                      , bytestring
   default-language:    Haskell2010
 
