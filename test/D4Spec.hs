@@ -21,10 +21,6 @@ spec = parallel $ do
         it "calculates a checksum" $
             L.calcChecksum "aaaaa-bbb-z-y-x" `shouldBe` "abxyz"
 
-    describe "freq" $
-        it "gets frequencies of chars in a string" $
-            L.freq "ab-az-bb" `shouldBe` [('a', 2), ('b', 3), ('z', 1)]
-
     describe "decrypt" $
         it "decrypts a string" $
             L.decryptName "qzmt-zixmtkozy-ivhz" 343 `shouldBe` "very encrypted name"

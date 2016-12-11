@@ -4,6 +4,7 @@ import Control.Monad
 import Data.Char
 import Data.List
 import Data.Maybe
+import Util
 import Text.Parsec hiding (Error, parse)
 import Text.Parsec.String
 
@@ -12,7 +13,6 @@ data Room = Room
     , sector :: Int
     , checksum :: String
     } deriving (Eq, Show)
-type Freq = (Char, Int)
 
 checksumLength = 5
 
@@ -27,12 +27,6 @@ calcChecksum = map fst . take checksumLength . sortBy compFreq . freq
     compFreq (c1, f1) (c2, f2) = case f1 == f2 of
         True -> compare c1 c2 -- ties should be sorted alphabetically
         False -> compare f2 f1 -- non-ties are sorted freq-desc
-
-freq :: String -> [Freq]
-freq = map charfreq . group . sort . filter (/= '-')
-  where
-    charfreq l | h : _ <- l = (h, length l)
-    charfreq _ = error "empty freq list?"
 
 decryptRoom :: Room -> Room
 decryptRoom (Room n s c) = Room (decryptName n s) s c
