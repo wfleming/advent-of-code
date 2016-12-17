@@ -25,6 +25,7 @@ library
                      , D9Lib
                      , D10Lib
                      , Util
+                     , PathSearch
   build-depends:       base >= 4.7 && < 5
                      , parsec
                      , split
