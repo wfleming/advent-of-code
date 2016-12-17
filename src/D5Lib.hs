@@ -1,12 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module D5Lib where
 
-import Crypto.Hash
 import Data.Char
 import Data.List
 import Data.Maybe
-import qualified Data.ByteString.Lazy as LB
-import qualified Data.ByteString.Lazy.Char8 as LC
+import Util
 
 type CharPos = (Char, Int)
 
@@ -67,9 +65,4 @@ idxHash seed idx =
         then Just hash
         else Nothing
   where
-    hash = (LC.unpack . LC.fromStrict . digestToHexByteString . md5) inputBs
-    inputBs = LC.pack (seed ++ show idx)
-    md5 :: LB.ByteString -> Digest MD5
-    md5 = hashlazy
-
-
+    hash =  md5 (seed ++ show idx)
