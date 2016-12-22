@@ -25,6 +25,7 @@ library
                      , D9Lib
                      , D10Lib
                      , D11Lib
+                     , D12Lib
                      , Util
                      , PathSearch
   build-depends:       base >= 4.7 && < 5
@@ -129,6 +130,15 @@ executable d11
   ghc-options:         -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , advent2016
+  default-language:    Haskell2010
+
+executable d12
+  hs-source-dirs:      app
+  main-is:             D12.hs
+  ghc-options:         -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , advent2016
+                     , parsec
   default-language:    Haskell2010
 
 test-suite advent2016-test
