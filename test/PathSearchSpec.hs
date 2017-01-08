@@ -30,3 +30,5 @@ instance PathState TestPathState where
       else [N (i * 2), N (i * 3)]
 
     isGoal (N i) = i == 15
+
+    goalDist (N i) = abs (15 - i)

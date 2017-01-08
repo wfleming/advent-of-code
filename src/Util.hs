@@ -20,3 +20,7 @@ md5 = LC.unpack . LC.fromStrict . digestToHexByteString . md5' . LC.pack
   where
     md5' :: LB.ByteString -> Digest MD5
     md5' = hashlazy
+
+{- | fn to be shorthand for a `seq` a -}
+seq' :: a -> a
+seq' a' = a' `seq` a'

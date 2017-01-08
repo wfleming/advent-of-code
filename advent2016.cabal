@@ -29,6 +29,7 @@ library
                      , D13Lib
                      , D14Lib
                      , D15Lib
+                     , D16Lib
                      , Util
                      , PathSearch
   build-depends:       base >= 4.7 && < 5
@@ -163,6 +164,14 @@ executable d14
 executable d15
   hs-source-dirs:      app
   main-is:             D15.hs
+  ghc-options:         -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , advent2016
+  default-language:    Haskell2010
+
+executable d16
+  hs-source-dirs:      app
+  main-is:             D16.hs
   ghc-options:         -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , advent2016
