@@ -2,8 +2,9 @@ module PathSearch
     ( Path(..)
     , PathState(..)
     , PathSearch.length
-    , minPath
+    , buildNextPaths
     , isLoop
+    , minPath
     , pp
     )
 where
@@ -31,7 +32,7 @@ class (Eq t, Show t) => PathState t where
     {- | calculate how far a state is from a goal state -}
     goalDist :: t -> Int
 
-{- | Find the shortest path from an initial state to a goal state -}
+{- | Find the shortest path from an initial state to a goal state via BFS -}
 minPath :: PathState a => a -> Path a
 minPath s = process [Path [s]]
   where
