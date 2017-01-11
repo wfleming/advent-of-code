@@ -32,14 +32,16 @@ library
                      , D16Lib
                      , D17Lib
                      , D18Lib
+                     , D19Lib
                      , Util
                      , PathSearch
   build-depends:       base >= 4.7 && < 5
+                     , bytestring
+                     , containers >= 0.5.8.1
+                     , cryptohash
+                     , matrix
                      , parsec
                      , split
-                     , cryptohash
-                     , bytestring
-                     , matrix
                      , vector
   default-language:    Haskell2010
 
@@ -196,12 +198,22 @@ executable d18
                      , parsec
   default-language:    Haskell2010
 
+executable d19
+  hs-source-dirs:      app
+  main-is:             D19.hs
+  ghc-options:         -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , advent2016
+                     , parsec
+  default-language:    Haskell2010
+
 test-suite advent2016-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
   build-depends:       base
                      , advent2016
+                     , containers
                      , hspec
                      , parsec
                      , vector
