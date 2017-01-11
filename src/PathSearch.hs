@@ -9,8 +9,12 @@ module PathSearch
     )
 where
 
-import Debug.Trace
+{-import Debug.Trace-}
 import qualified Data.List as L
+
+{- debug: allow keeping trace statements without too much noise in tests -}
+trace :: a -> b -> b
+trace _ b = b
 
 maxStates = 1000 -- to prevent giant search space growth
 
