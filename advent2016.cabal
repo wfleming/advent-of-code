@@ -34,6 +34,7 @@ library
                      , D18Lib
                      , D19Lib
                      , D20Lib
+                     , D21Lib
                      , Util
                      , PathSearch
   build-depends:       base >= 4.7 && < 5
@@ -210,6 +211,15 @@ executable d19
 executable d20
   hs-source-dirs:      app
   main-is:             D20.hs
+  ghc-options:         -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , advent2016
+                     , parsec
+  default-language:    Haskell2010
+
+executable d21
+  hs-source-dirs:      app
+  main-is:             D21.hs
   ghc-options:         -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , advent2016
