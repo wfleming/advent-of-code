@@ -8,7 +8,7 @@ main :: IO ()
 main = do
   vaultSeed <- head <$> getArgs
   let vault = start vaultSeed
-  let finalVault = last . PS.states . PS.minPath $ vault
+  let finalVault = PS.last . PS.minPath $ vault
   putStrLn $ "shortest path with seed '" ++ vaultSeed ++ "':  " ++ path finalVault
 
   let finalVault' = maxPath vault

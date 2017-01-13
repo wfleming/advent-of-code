@@ -3,6 +3,7 @@ module PathSearchSpec (main, spec) where
 import Test.Hspec
 
 import PathSearch
+import qualified Data.Sequence as Seq
 
 main :: IO ()
 main = hspec spec
@@ -11,15 +12,15 @@ spec :: Spec
 spec = parallel $ do
     describe "minPath" $
         it "finds a path" $ do
-            minPath (N 1) `shouldBe` Path [N 1, N 3, N 6, N 7, N 14, N 15]
+            minPath (N 1) `shouldBe` Path (Seq.fromList [N 1, N 3, N 6, N 7, N 14, N 15])
 
     describe "isLoop" $ do
         it "detects a loop" $ do
-            let p = Path { states = [N 1, N 2, N 1] }
+            let p = Path { states = Seq.fromList [N 1, N 2, N 1] }
             p `shouldSatisfy` isLoop
 
         it "does not have a false positive" $ do
-            let p = Path { states = [N 3, N 2, N 1] }
+            let p = Path { states = Seq.fromList [N 3, N 2, N 1] }
             p `shouldSatisfy` (not . isLoop)
 
 data TestPathState = N Int deriving (Eq, Show)

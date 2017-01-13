@@ -42,7 +42,7 @@ spec = parallel $ do
     describe "path finding" $
         it "finds a path" $ do
             let s = start "ihgpwlah"
-            (path . last . PS.states . PS.minPath) s `shouldBe` "DDRRRD"
+            (path . PS.last . PS.minPath) s `shouldBe` "DDRRRD"
 
     describe "maxPath" $
         it "finds a very long path" $ do

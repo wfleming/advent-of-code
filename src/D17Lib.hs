@@ -1,10 +1,13 @@
 {-# LANGUAGE Strict #-}
 module D17Lib where
 
+import Data.Foldable (toList)
 import Data.List
 import Data.Maybe
 import Data.Ord
+import Data.Sequence (Seq)
 import Util
+import qualified Data.Sequence as Seq
 import qualified PathSearch as PS
 
 data Direction = U | D | L | R deriving (Eq, Show)
@@ -84,15 +87,17 @@ move v@Vault { pos = (x, y) } d
  - designed specifically for `Vault` (which tracks history internally),
  - so this doesn't bother with `Path` to track history for the return val -}
 maxPath :: Vault -> Vault
-maxPath s = step Nothing [PS.Path [s]]
+maxPath s = step Nothing [PS.Path (Seq.singleton s)]
   where
     step :: Maybe Vault -> [PS.Path Vault] -> Vault
     step Nothing [] = error "No states left, no goals found"
     step (Just g) [] = g
     step g states = step (seq' g') (seq' states')
       where
-        nextVaults = map (last . PS.states) $ PS.buildNextPaths states
+        nextVaults = map
+            (PS.last) $
+            (toList . PS.buildNextPaths . Seq.fromList) states
         goals = filter PS.isGoal nextVaults
         bestGoal = listToMaybe . reverse . sortOn (length . path) $ goals
         g' = last $ sort [g, bestGoal]
-        states' = map (PS.Path . (:[])) $ nextVaults \\ goals
+        states' = map (PS.singleton) (nextVaults \\ goals)
