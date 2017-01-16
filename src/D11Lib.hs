@@ -1,19 +1,22 @@
+{-# LANGUAGE DeriveGeneric #-}
 module D11Lib where
 
+import Data.Hashable (Hashable)
 import Data.List
+import GHC.Generics (Generic)
 import qualified PathSearch as PS
 
 data Element =
     Promethium | Cobalt | Curium | Plutonium | Ruthenium | Elerium | Dilithium
-    deriving (Eq, Show)
+    deriving (Eq, Generic, Show)
 
-data ItemType = Microchip | Generator deriving (Eq, Show)
+data ItemType = Microchip | Generator deriving (Eq, Generic, Show)
 
 type Item = (ItemType, Element)
 
-data Floor = Floor { items :: [Item] } deriving (Show)
+data Floor = Floor { items :: [Item] } deriving (Generic, Show)
 
-data State = State { floors :: [Floor], curFloor :: Int } deriving (Eq, Show)
+data State = State { floors :: [Floor], curFloor :: Int } deriving (Eq, Generic, Show)
 
 initState = State
     { floors =
@@ -36,6 +39,12 @@ initState2 = State
         ]
     ,  curFloor = 0
     }
+
+-- default Hashable impls
+instance Hashable Element
+instance Hashable ItemType
+instance Hashable Floor
+instance Hashable State
 
 instance Eq Floor where
   (==) f1 f2 = null $ (nub . items) f1 \\ (nub . items) f2

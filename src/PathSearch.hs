@@ -13,6 +13,7 @@ module PathSearch
 where
 
 {-import Debug.Trace-}
+
 import Data.Foldable (toList)
 import Data.Ord (comparing)
 import Data.Sequence (Seq)
@@ -79,7 +80,7 @@ buildNextPaths :: PathState a => Seq (Path a) -> Seq (Path a)
 buildNextPaths l | Seq.null l = error "buildNextPaths empty list: won't ever find a solution."
 buildNextPaths l | Seq.length l > maxStates =
     trace ("There are now " ++ (show . Seq.length) l ++ " states in the search space: trimming. Current leader is " ++ (show . goalDist . seqLast . states . seqHead) trimmedStates ++ " from goal.")
-    $ buildNextPaths trimmedStates
+    $ seq' (buildNextPaths trimmedStates)
   where
     trimmedStates = ((Seq.take maxStates . Seq.sortBy sorter) l)
     sorter p1 p2 = compare (extractDist p1) (extractDist p2)
@@ -91,9 +92,9 @@ buildNextPaths l =
       {-"\n dupStates=" ++ show (Seq.filter (hasDupCurState candidatePaths) candidatePaths) ++-}
       {-"\n----------------\n")-}
     trace ("----- DEBUG -----\nCOUNT=" ++ show (Seq.length l))
-    $ L.foldl' dropUnlessOk candidatePaths candidatePaths
+    $ seq' (L.foldl' dropUnlessOk candidatePaths candidatePaths)
   where
-    candidatePaths = seqConcatMap buildNextPath l
+    candidatePaths = seq' $ seqConcatMap buildNextPath l
     dropUnlessOk memo p = if isOk memo p then memo else seqDelete p memo
     isOk ps p = not (isLoop p || hasDupCurState ps p)
 

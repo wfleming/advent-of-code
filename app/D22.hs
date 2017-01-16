@@ -1,5 +1,6 @@
 module Main (main) where
 
+import AStar
 import D22Lib
 import System.Environment (getArgs)
 import Text.Parsec.String (parseFromFile)
@@ -13,3 +14,7 @@ main = do
     let p1ViableNodes = viablePairs nodes
 
     putStrLn $ "(P1) viable pair count: " ++ show (length p1ViableNodes)
+
+    let p2Path = astar $ initState nodes
+
+    putStrLn $ "(P2) shortest path to goal: " ++ show (length p2Path - 1)

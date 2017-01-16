@@ -15,7 +15,8 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     D2Lib
+  exposed-modules:     AStar
+                     , D2Lib
                      , D3Lib
                      , D4Lib
                      , D5Lib
@@ -42,9 +43,11 @@ library
                      , bytestring
                      , containers >= 0.5.8.1
                      , cryptohash
+                     , hashable
                      , matrix
                      , parsec
                      , split
+                     , unordered-containers >= 0.2.7.0
                      , vector
   default-language:    Haskell2010
 

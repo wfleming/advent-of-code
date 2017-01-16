@@ -1,17 +1,22 @@
 module Main (main) where
 
+import AStar
 import D11Lib
-import qualified PathSearch as PS
 
 main :: IO ()
 main = do
-  {-let p = PS.minPath initState-}
-  let p = PS.minPath initState2
-  {-let p = PS.minPath initStateEg-}
+  let p1Path = astar initState
+  let p1Len = length p1Path
 
-  putStrLn $ "path length: " ++ show (PS.length p) ++
-      " (that's " ++ show (PS.length p - 1) ++ " steps.)"
+  putStrLn $ "(P1) path length: " ++ show p1Len ++
+      " (that's " ++ show (p1Len - 1) ++ " steps.)"
 
+
+  let p2Path = astar initState
+  let p2Len = length p2Path
+
+  putStrLn $ "(P2) path length: " ++ show p2Len ++
+      " (that's " ++ show (p2Len - 1) ++ " steps.)"
 
 {-initStateEg :: State-}
 {-initStateEg = State-}
