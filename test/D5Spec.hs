@@ -12,12 +12,10 @@ spec :: Spec
 spec = parallel $ do
     describe "password" $
         it "finds the password" $ do
-            pendingWith "SLOW TEST"
             password "abc" `shouldBe` "18f47a30"
 
     describe "orderedPassword" $ do
         it "finds the password" $ do
-            pendingWith "SLOW TEST"
             orderedPassword "abc" `shouldBe` "05ace8e3"
 
     describe "passChar" $ do

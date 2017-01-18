@@ -39,8 +39,6 @@ spec = parallel $ do
 
     describe "findKeys" $ do
         it "gets the right keys" $ do
-          pendingWith "SLOW TEST"
           let ks = findKeys "abc"
-          putStrLn $ (unlines . map show) ks
           length ks `shouldBe` keyCount
           (fst . last) ks `shouldBe` 22728

@@ -105,7 +105,6 @@ apply vm (Jnz (Right c0) c1) = -- if c0 == 0, move c1, otherwise move 1
     if c0 /= 0
     then move vm c1
     else move vm 1
-apply _ _ = error "unimplemented instruction"
 
 get :: VM -> RegOperand -> Int
 get vm (Reg r) = fromMaybe (error "bad register") $ lookup r (registers vm)
