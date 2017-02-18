@@ -19,17 +19,17 @@ spec = parallel $ do
                   "/dev/grid/node-x0-y1     88T   65T    23T   73%\n"
             let ns = P.parse nodesP "fixture" input
             ns `shouldBe` Right [
-                    Node { pos = (0, 0), capacity = 86, used = 73 },
-                    Node { pos = (0, 1), capacity = 88, used = 65 }
+                    Node { pos = (0, 0), info = (86, 73) },
+                    Node { pos = (0, 1), info = (88, 65) }
                 ]
 
     describe "viablePairs" $
         it "finds viable pairs" $ do
             let ns = [
-                    Node { pos = (0, 0), capacity = 86, used = 73 },
-                    Node { pos = (0, 1), capacity = 88, used = 12 },
-                    Node { pos = (0, 2), capacity = 88, used = 68 },
-                    Node { pos = (0, 3), capacity = 85, used = 84 }
+                    Node { pos = (0, 0), info = (86, 73) },
+                    Node { pos = (0, 1), info = (88, 12) },
+                    Node { pos = (0, 2), info = (88, 68) },
+                    Node { pos = (0, 3), info = (85, 84) }
                   ]
             viablePairs ns `shouldBe` [
                     (ns !! 1, ns !! 0),
@@ -42,11 +42,16 @@ spec = parallel $ do
         it "finds the source node" $
             sourceNode fixtureNodes `shouldBe` (fixtureNodes !! 6)
 
+        it "determines (Node NodeKind) from (Node NodeSizes)" $ do
+            let sNodes = simplify fixtureNodes
+            (map info sNodes) `shouldBe` [Avail, Avail, Wall, Avail, Empty,
+                Avail, Avail, Avail, Avail]
+
         it "knows the correct goalDist & goal state" $ do
-            let ns0 = NodesState { _nodes = fixtureNodes, curPos = (2, 0) }
+            let sNodes = simplify $ fixtureNodes
+            let ns0 = NodesState { nodes = sNodes, curPos = (2, 0) }
             PS.goalDist ns0 `shouldBe` 2
-            let ns0 = NodesState { _nodes = fixtureNodes, curPos = (0, 0) }
-            PS.goalDist ns0 `shouldBe` 0
+            let ns0 = NodesState { nodes = sNodes, curPos = (0, 0) }
             ns0 `shouldSatisfy` PS.isGoal
 
         it "moves data from one node to another" $ do
@@ -55,15 +60,14 @@ spec = parallel $ do
             used (get (1, 1) moved) `shouldBe` 7
 
         it "determines viableMoves" $ do
-            let moves = viableMoves fixtureNodes
+            let moves = viableMoves $ simplify fixtureNodes
             moves `shouldBe` [((0, 1), (1,1)), ((1, 0), (1,1)),
                 ((1, 2), (1,1)), ((2, 1), (1,1))]
 
         it "finds the shortestPath" $ do
-            let p = astar $ initState fixtureNodes
+            pending
+            let p = findPath $ simplify fixtureNodes
             length p `shouldBe` 8 -- 7 steps + initial state
-
-
 
 fixtureInput = "/dev/grid/node-x0-y0   10T    8T     2T   80%\n" ++
                "/dev/grid/node-x0-y1   11T    6T     5T   54%\n" ++
