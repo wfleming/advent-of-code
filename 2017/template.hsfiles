@@ -1,0 +1,106 @@
+{-# START_FILE {{name}}.cabal #-}
+name:                {{name}}
+version:             0.1.0.0
+-- synopsis:
+-- description:
+homepage:            https://github.com/wfleming/advent-of-code
+license:             MIT
+license-file:        LICENSE
+author:              {{author-name}}{{^author-name}}Author name here{{/author-name}}
+maintainer:          {{author-email}}{{^author-email}}example@example.com{{/author-email}}
+copyright:           {{copyright}}{{^copyright}}{{year}}{{^year}}2017{{/year}} {{author-name}}{{^author-name}}Author name here{{/author-name}}{{/copyright}}
+category:            {{category}}{{^category}}Puzzle{{/category}}
+build-type:          Simple
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     {{name}}Lib
+  build-depends:       base >= 4.7 && < 5
+  default-language:    Haskell2010
+  other-modules        {{name}}Spec
+
+executable {{name}}
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  ghc-options:         -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , {{name}}
+  default-language:    Haskell2010
+
+test-suite {{name}}-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       base
+                     , {{name}}
+                     , hspec
+                     , QuickCheck
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/wfleming/advent-of-code
+
+{-# START_FILE Setup.hs #-}
+import Distribution.Simple
+main = defaultMain
+
+{-# START_FILE test/Spec.hs #-}
+{-# OPTIONS_GHC -F -pgmF hspec-discover #-}
+
+{-# START_FILE test/{{name}}Spec.hs #-}
+module {{name}}Spec where
+
+import Test.Hspec
+import Test.QuickCheck
+
+import {{name}}Lib
+
+-- `main` is here so that this module can be run from GHCi on its own.  It is
+-- not needed for automatic spec discovery.
+main :: IO ()
+main = hspec spec
+
+spec :: Spec
+spec = do
+  describe "todo" $ do
+    it "todo" $ do
+      true
+
+{-# START_FILE src/{{name}}Lib.hs #-}
+module {{name}}Lib  where
+
+
+{-# START_FILE app/Main.hs #-}
+module Main where
+
+import {{name}}Lib
+import System.Environment (getArgs)
+
+main :: IO ()
+main = do
+  -- file <- head <$> getArgs
+  -- parseResult <- parseFromFile parser file
+  putStrLn "HELLO WORLD"
+
+{-# START_FILE LICENSE #-}
+Copyright 2017 William Fleming
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
