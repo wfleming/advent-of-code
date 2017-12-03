@@ -1,7 +1,5 @@
 module D1Lib where
 
--- import Control.Monad (void)
-import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.String
 import Text.Megaparsec.Char
