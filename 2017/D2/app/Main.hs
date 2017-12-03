@@ -17,3 +17,5 @@ main = do
   let sheet = either (error . show) id parseResult
   let csum1 = checksum1 sheet
   putStrLn $ "p1 checksum:" ++ (show csum1)
+  let csum2 = checksum2 sheet
+  putStrLn $ "p2 checksum:" ++ (show csum2)

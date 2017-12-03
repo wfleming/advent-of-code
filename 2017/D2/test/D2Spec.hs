@@ -34,3 +34,19 @@ spec = do
     it "calcs the checksum of a row" $ do
       let r = rowsum1 [3, 1, 2, 9, 4]
       r `shouldBe` 8
+
+  describe "checksum2" $ do
+    it "calcs the checksum of a sheet" $ do
+      let s = [ [5, 9, 2, 8],
+                [9, 4, 7, 3],
+                [3, 8, 6, 5] ]
+      checksum2 s `shouldBe` 9
+
+  describe "rowsum2" $ do
+    it "calcs the checksum of a row" $ do
+      let r = rowsum2 [5, 9, 2, 8]
+      r `shouldBe` 4
+
+  describe "rowfactor" $ do
+    it "finds the elements that factor each other" $ do
+      rowfactor [5, 9, 2, 8] `shouldBe` (8, 2)
