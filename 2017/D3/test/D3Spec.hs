@@ -25,7 +25,7 @@ spec = do
       cellPos 4 `shouldBe` (0, 1)
       cellPos 5 `shouldBe` (-1, 1)
 
-  describe "integration" $ do
+  describe "p1 integration" $ do
     it "gets the correct distance for cell n=1" $ do
       let d = dist (0, 0) $ cellPos 1
       d `shouldBe` 0
@@ -42,3 +42,37 @@ spec = do
       let d = dist (0, 0) $ cellPos 1024
       d `shouldBe` 31
 
+  describe "neighbors" $ do
+    it "knows when coords are neighbors are not" $ do
+      neighbors (0, 0) (1, 0) `shouldBe` True
+      neighbors (0, 0) (1, 1) `shouldBe` True
+      neighbors (0, 0) (2, 0) `shouldBe` False
+
+  describe "cellNeighbors" $ do
+    it "identifies the neighbors of a cell" $ do
+      cellNeighbors 2 `shouldBe` [1]
+      cellNeighbors 3 `shouldBe` [1, 2]
+
+  describe "stressTestVal" $ do
+    it "calcs the value at cell 1" $ do
+      stressTestVal 1 `shouldBe` 1
+
+    it "calcs the value at cell 2" $ do
+      stressTestVal 2 `shouldBe` 1
+
+    it "calcs the value at cell 3" $ do
+      stressTestVal 3 `shouldBe` 2
+
+    it "calcs the value at cell 4" $ do
+      stressTestVal 4 `shouldBe` 4
+
+    it "calcs the value at cell 5" $ do
+      stressTestVal 5 `shouldBe` 5
+
+    it "calcs the value at cell 7" $ do
+      stressTestVal 7 `shouldBe` 11
+
+  describe "firstValHigherThan" $ do
+    it "finds the first higher val" $ do
+      firstValHigherThan 2 `shouldBe` 4
+      firstValHigherThan 7 `shouldBe` 6

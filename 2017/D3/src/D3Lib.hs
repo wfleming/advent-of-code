@@ -1,5 +1,8 @@
 module D3Lib  where
 
+import Data.List (find)
+import Data.Maybe (fromJust)
+
 type Pos = (Int, Int)
 
 data Dir = U | D | R | L deriving (Eq, Show)
@@ -45,3 +48,25 @@ turnDir U = L
 turnDir L = D
 turnDir D = R
 
+neighbors :: Pos -> Pos -> Bool
+neighbors (x1, y1) (x2, y2) = (abs (x2 - x1) <= 1 && abs(y2 - y1) <= 1)
+
+-- neighbors of a cell (only the ones with lower indexes)
+cellNeighbors :: Int -> [Int]
+cellNeighbors x =
+    filter isMatch [1..(x - 1)]
+  where
+    isMatch y = neighbors (cellPos x) (cellPos y)
+
+-- determie the value filled in cell n during the stress test
+stressTestVal :: Int -> Int
+stressTestVal 1 = 1
+stressTestVal n = sum . (map stressTestVal) $ cellNeighbors n
+
+-- find the first cell with a stress test value stored higher than the target
+-- index
+--
+-- We're finding in an infinite list, so `find` will never return `Nothing`: if
+-- mess up, we're searching infinitely.
+firstValHigherThan :: Int -> Int
+firstValHigherThan n = fromJust $ find (\x -> stressTestVal x > n) [1..]
