@@ -2,9 +2,7 @@ module D22Spec (main, spec) where
 
 import Test.Hspec
 
-import AStar
 import D22Lib
-import qualified PathSearch as PS
 import qualified Text.Parsec as P
 
 main :: IO ()
@@ -45,14 +43,7 @@ spec = parallel $ do
         it "determines (Node NodeKind) from (Node NodeSizes)" $ do
             let sNodes = simplify fixtureNodes
             (map info sNodes) `shouldBe` [Avail, Avail, Wall, Avail, Empty,
-                Avail, Avail, Avail, Avail]
-
-        it "knows the correct goalDist & goal state" $ do
-            let sNodes = simplify $ fixtureNodes
-            let ns0 = NodesState { nodes = sNodes, curPos = (2, 0) }
-            PS.goalDist ns0 `shouldBe` 2
-            let ns0 = NodesState { nodes = sNodes, curPos = (0, 0) }
-            ns0 `shouldSatisfy` PS.isGoal
+                Avail, Data, Avail, Avail]
 
         it "moves data from one node to another" $ do
             let moved = move (1, 0) (1, 1) fixtureNodes
@@ -65,7 +56,6 @@ spec = parallel $ do
                 ((1, 2), (1,1)), ((2, 1), (1,1))]
 
         it "finds the shortestPath" $ do
-            pending
             let p = findPath $ simplify fixtureNodes
             length p `shouldBe` 8 -- 7 steps + initial state
 

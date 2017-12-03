@@ -1,0 +1,56 @@
+Path {states = [
+  State {floors = [
+    Floor {items = [(Microchip,Cobalt),(Microchip,Promethium)]},
+    Floor {items = [(Generator,Cobalt)]},
+    Floor {items = [(Generator,Promethium)]},
+    Floor {items = []}],
+    curFloor = 0},
+
+  State {floors = [
+    Floor {items = [(Microchip,Promethium)]},
+    Floor {items = [(Generator,Cobalt),(Microchip,Cobalt)]},
+    Floor {items = [(Generator,Promethium)]},
+    Floor {items = []}],
+    curFloor = 1},
+
+  State {floors = [
+    Floor {items = [(Microchip,Promethium)]},
+    Floor {items = []},
+    Floor {items = [(Generator,Promethium),(Generator,Cobalt),(Microchip,Cobalt)]},
+    Floor {items = []}],
+    curFloor = 2},
+
+  State {floors = [
+    Floor {items = [(Microchip,Promethium)]},
+    Floor {items = [(Generator,Promethium),(Generator,Cobalt)]},
+    Floor {items = [(Microchip,Cobalt)]},
+    Floor {items = []}],
+    curFloor = 1},
+
+  State {floors = [
+    Floor {items = [(Microchip,Promethium),(Generator,Promethium)]},
+    Floor {items = [(Generator,Cobalt)]},
+    Floor {items = [(Microchip,Cobalt)]},
+    Floor {items = []}],
+    curFloor = 0},
+
+  State {floors = [
+    Floor {items = []},
+    Floor {items = [(Generator,Cobalt),(Microchip,Promethium),(Generator,Promethium)]},
+    Floor {items = [(Microchip,Cobalt)]},
+    Floor {items = []}],
+    curFloor = 1},
+
+  State {floors = [
+    Floor {items = []},
+    Floor {items = [(Generator,Cobalt),(Generator,Promethium)]},
+    Floor {items = [(Microchip,Cobalt),(Microchip,Promethium)]},
+    Floor {items = []}],
+    curFloor = 2},
+
+  State {floors = [
+    Floor {items = []},
+    Floor {items = [(Generator,Cobalt),(Generator,Promethium)]},
+    Floor {items = []},
+    Floor {items = [(Microchip,Cobalt),(Microchip,Promethium)]}],
+    curFloor = 3}]}
