@@ -14,5 +14,5 @@ main :: IO ()
 main = do
   file <- head <$> getArgs
   parseResult <- parseFile parser file
-  let root = rootName <$> parseResult
-  putStrLn $ "p1: root node is " ++ (show root)
+  let rootNodeName = rootName <$> parseResult
+  putStrLn $ "p1: root node is " ++ (show rootNodeName)
