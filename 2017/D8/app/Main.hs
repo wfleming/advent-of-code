@@ -14,3 +14,5 @@ main = do
   let state' = applyAll state rules
   let highestVal = largestRegVal state'
   putStrLn $ "p1: highest reg val = " ++ (show highestVal)
+  let highestEver = largestEver state rules
+  putStrLn $ "p2: highest reg val ever = " ++ (show highestEver)
