@@ -2,6 +2,7 @@ module D7Spec where
 
 import Test.Hspec
 
+import Data.Tree
 import Text.Megaparsec (parse, ParseError, Dec)
 import D7Lib
 
@@ -48,22 +49,22 @@ spec = do
             , (("def", 456), [("abc", 123)]) ]
       let xs' = stubTrees xs
       xs' `shouldBe`
-            [ Node { root = ("abc", 123), children = [] }
-            , Node { root = ("def", 456), children = [Node { root = ("abc", 123), children = [] }] } ]
+            [ Node { rootLabel = ("abc", 123), subForest = [] }
+            , Node { rootLabel = ("def", 456), subForest = [Node { rootLabel = ("abc", 123), subForest = [] }] } ]
 
   describe "rootName" $ do
-    it "identifies the root node" $ do
+    it "identifies the rootLabel node" $ do
       let r = rootName <$> parse parser "NO_INPUT_FILE" sampleInputStr
       r `shouldBe` Right "tknk"
 
   describe "mvCandidates" $ do
     it "identifies move candidates" $ do
       let xs =
-           [ Node { root = ("abc", 123), children = [] }
-           , Node { root = ("def", 456), children = [Node { root = ("abc", 123), children = [] }] } ]
+           [ Node { rootLabel = ("abc", 123), subForest = [] }
+           , Node { rootLabel = ("def", 456), subForest = [Node { rootLabel = ("abc", 123), subForest = [] }] } ]
       let (candidates, others) = mvCandidates xs
-      candidates `shouldBe` [Node { root = ("abc", 123), children = [] }]
-      others `shouldBe` [Node { root = ("def", 456), children = [Node { root = ("abc", 123), children = [] }]}]
+      candidates `shouldBe` [Node { rootLabel = ("abc", 123), subForest = [] }]
+      others `shouldBe` [Node { rootLabel = ("def", 456), subForest = [Node { rootLabel = ("abc", 123), subForest = [] }]}]
 
     it "identifies move candidates in the sample input" $ do
       let r = parse parser "NO_INPUT_FILE" sampleInputStr
@@ -72,10 +73,34 @@ spec = do
       length candidates `shouldBe` 9
       length others `shouldBe` 4
 
+  describe "mvTreeToSub" $ do
+    it "moves a tree correctly" $ do
+      let t = Node { rootLabel = ("pbga", 66), subForest = [] }
+      let ts =
+            [ Node
+              { rootLabel = ("padx", 45)
+              , subForest = [ Node { rootLabel = ("pbga", 66), subForest = [] } ]
+              } ]
+      let r = mvTreeToSub t ts
+      r `shouldBe`
+            [ Node
+              { rootLabel = ("padx", 45)
+              , subForest = [ Node { rootLabel = ("pbga", 66), subForest = [] } ]
+              } ]
+
   describe "buildTree" $ do
-    it "identifies the root node" $ do
-      let r = (fst . root . buildTree) <$> parse parser "NO_INPUT_FILE" sampleInputStr
+    it "identifies the rootLabel node" $ do
+      let r = (fst . rootLabel . buildTree) <$> parse parser "NO_INPUT_FILE" sampleInputStr
       r `shouldBe` Right "tknk"
+
+  describe "unbalancedCulprit" $ do
+    it "identifies the tree causing the unbalancing" $ do
+      let tree = buildTree <$> parse parser "NO_INPUT_FILE" sampleInputStr
+      let tree' = either (error . show) id tree
+      let culprit = unbalancedCulprit tree'
+      let rootN = rootLabel <$> culprit
+      rootN `shouldBe` Just ("tknk", 41)
+
 
 sampleInputStr :: String
 sampleInputStr  =
