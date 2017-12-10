@@ -22,3 +22,16 @@ scoreGroups = score' 0 0
     score' s ps ('{' : t) = score' (s + ps + 1) (ps + 1) t
     score' s ps ('}' : t) = score' s (ps - 1) t
     score' s ps (_ : t) = score' s ps t
+
+countGarbage :: String -> Int
+countGarbage = scrub' 0 False False
+  where
+    --     inGarbage -> skipNext -> input -> output
+    scrub' :: Int -> Bool -> Bool -> String -> Int
+    scrub' memo _ _ [] = memo
+    scrub' memo inGarbage True (h : t) = scrub' memo inGarbage False t
+    scrub' memo True _ ('>' : t) = scrub' memo False False t
+    scrub' memo True _ ('!' : t) = scrub' memo True True t
+    scrub' memo True _ (h : t) = scrub' (memo + 1) True False t
+    scrub' memo False _ ('<' : t) = scrub' memo True False t
+    scrub' memo False _ (h : t) = scrub' memo False False t

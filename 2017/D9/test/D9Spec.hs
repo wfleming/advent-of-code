@@ -36,3 +36,13 @@ spec = do
       (scoreGroups . scrubGarbage) "{{<ab>},{<ab>},{<ab>},{<ab>}}" `shouldBe` 9
       (scoreGroups . scrubGarbage) "{{<!!>},{<!!>},{<!!>},{<!!>}}" `shouldBe` 9
       (scoreGroups . scrubGarbage) "{{<a!>},{<a!>},{<a!>},{<ab>}}" `shouldBe` 3
+
+  describe "countGarbage" $ do
+    it "counts garbage chars" $ do
+      countGarbage "<>" `shouldBe` 0
+      countGarbage "<random characters>" `shouldBe` 17
+      countGarbage "<<<<>" `shouldBe` 3
+      countGarbage "<{!>}>" `shouldBe` 2
+      countGarbage "<!!>" `shouldBe` 0
+      countGarbage "<!!!>>" `shouldBe` 0
+      countGarbage "<{o\"i!a,<{i<a>" `shouldBe` 10
