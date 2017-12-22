@@ -19,7 +19,6 @@ library
                      , megaparsec
                      , text
   default-language:    Haskell2010
-  other-modules        D10Spec
 
 executable D10
   hs-source-dirs:      app
@@ -27,6 +26,7 @@ executable D10
   ghc-options:         -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , D10
+                     , KnotHash
   default-language:    Haskell2010
 
 test-suite D10-test

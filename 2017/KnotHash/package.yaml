@@ -1,0 +1,37 @@
+name:                KnotHash
+version:             0.1.0.0
+github:              "wfleming/KnotHash"
+license:             BSD3
+author:              "Will Fleming"
+maintainer:          "will@flemi.ng"
+copyright:           "Copyright: (c) 2016 Will Fleming"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+synopsis: Implementation of Knot Hash from AoC 2017 Day 10
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on Github at <https://github.com/wfleming/KnotHash#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+
+tests:
+  KnotHash-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - KnotHash
