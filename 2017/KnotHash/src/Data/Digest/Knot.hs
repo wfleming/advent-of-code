@@ -54,14 +54,14 @@ xorList (h : t) = foldl' xor h t
 compactBytes :: [Int] -> [Int]
 compactBytes = map xorList . chunk 16
 
-binHash :: String -> [Int]
-binHash input = ns
+rawHash :: String -> [Int]
+rawHash input =
+    compactBytes ns
   where
     s0 = (new [0..255] . seedBytes . T.unpack . T.strip . T.pack) input
     (State ns _ _ _) = runRounds 64 s0
 
 hash :: String -> String
-hash input = foldr f "" $ compactBytes ns
+hash = foldr f "" . rawHash
   where
     f b memo = printf "%02x%s" b memo
-    ns = binHash input
