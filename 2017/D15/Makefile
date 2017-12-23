@@ -11,3 +11,9 @@ test.watch: test
 
 install:
 	stack install --ghc-options "-j$(shell nproc) -O2"
+
+run-sample: install
+	sh -c 'time ./bin/D15 +RTS -qa -N2 -RTS 65 8921'
+
+run: install
+	sh -c 'time ./bin/D15 +RTS -qa -N2 -RTS 883 879'

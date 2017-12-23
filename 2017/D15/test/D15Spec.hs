@@ -14,7 +14,7 @@ spec :: Spec
 spec = do
   describe "next" $ do
     it "iterates sample generator a" $ do
-      let ga0 = Gen { gSeed = 65, gFactor = factorA }
+      let ga0 = Gen { gSeed = 65, gFactor = factorA, gModuloGate = 1 }
       let (ga1, v1) = next ga0
       v1 `shouldBe` 1092455
       let (ga2, v2) = next ga1
@@ -27,7 +27,7 @@ spec = do
       v5 `shouldBe` 1352636452
 
     it "iterates sample generator b" $ do
-      let gb0 = Gen { gSeed = 8921, gFactor = factorB }
+      let gb0 = Gen { gSeed = 8921, gFactor = factorB, gModuloGate = 1 }
       let (gb1, v1) = next gb0
       v1 `shouldBe` 430625591
       let (gb2, v2) = next gb1
@@ -38,6 +38,19 @@ spec = do
       v4 `shouldBe` 137874439
       let (gb5, v5) = next gb4
       v5 `shouldBe` 285222916
+
+    it "iterates sample generator a with a non-1 modulo gate" $ do
+      let ga0 = Gen { gSeed = 65, gFactor = factorA, gModuloGate = 4 }
+      let (ga1, v1) = next ga0
+      v1 `shouldBe` 1352636452
+      let (ga2, v2) = next ga1
+      v2 `shouldBe` 1992081072
+      let (ga3, v3) = next ga2
+      v3 `shouldBe` 530830436
+      let (ga4, v4) = next ga3
+      v4 `shouldBe` 1980017072
+      let (ga5, v5) = next ga4
+      v5 `shouldBe` 740335192
 
   describe "lpad" $ do
     it "pads a string to specified length" $ do
@@ -53,6 +66,20 @@ spec = do
 
   describe "runJudge" $ do
     it "counts the correct number of matches for sample" $ do
-      let ga = Gen { gSeed = 65, gFactor = factorA }
-      let gb = Gen { gSeed = 8921, gFactor = factorB }
+      let ga = Gen { gSeed = 65, gFactor = factorA, gModuloGate = 1 }
+      let gb = Gen { gSeed = 8921, gFactor = factorB, gModuloGate = 1 }
       runJudge ga gb 5 `shouldBe` 1
+
+    it "counts the correct number of matches for p2 sample" $ do
+      let ga = Gen { gSeed = 65, gFactor = factorA, gModuloGate = 4 }
+      let gb = Gen { gSeed = 8921, gFactor = factorB, gModuloGate = 8 }
+      runJudge ga gb 1056 `shouldBe` 1
+
+  describe "runJudgePar" $ do
+    it "counts the correct number of matches for p2 sample" $ do
+      let ga = Gen { gSeed = 65, gFactor = factorA, gModuloGate = 4 }
+      gaP <- wrapGen ga
+      let gb = Gen { gSeed = 8921, gFactor = factorB, gModuloGate = 8 }
+      gbP <- wrapGen gb
+      runJudgePar gaP gbP 1056 `shouldReturn` 1
+

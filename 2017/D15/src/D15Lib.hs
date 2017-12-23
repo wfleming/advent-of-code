@@ -1,47 +1,71 @@
 module D15Lib  where
 
+import Control.Concurrent (Chan, newChan, readChan, writeChan)
+import Control.Concurrent.Async (async)
 import Data.Bits
 
-data Gen = Gen { gSeed :: Integer , gFactor :: Integer } deriving (Eq, Show)
+data Gen = Gen
+  { gSeed :: Int
+  , gFactor :: Int
+  , gModuloGate :: Int
+  } deriving (Eq, Show)
 
-divisor :: Integer
+data ParGen = ParGen Gen (Chan (ParGen, Int))
+
+divisor :: Int
 divisor = 2147483647
 
-factorA :: Integer
+factorA :: Int
 factorA = 16807
 
-factorB :: Integer
+factorB :: Int
 factorB = 48271
 
-iterations = 40000000 -- 40 million
+iterationsP1 :: Int
+iterationsP1 = 40000000 -- 40 million
 
-next :: Gen -> (Gen, Integer)
+iterationsP2 :: Int
+iterationsP2 = 5000000 -- 5 million
+
+next :: Gen -> (Gen, Int)
 next gen =
   let
     val = (gSeed gen * gFactor gen) `mod` divisor
+    gen' = Gen { gSeed = val, gFactor = gFactor gen, gModuloGate = gModuloGate gen }
   in
-    ( Gen { gSeed = val, gFactor = gFactor gen }
-    , val
-    )
+    if val `mod` gModuloGate gen == 0
+    then (gen', val)
+    else next gen'
+
+wrapGen :: Gen -> IO ParGen
+wrapGen gen = do
+  c <- newChan
+  return $ ParGen gen c
+
+nextPar :: ParGen -> IO ()
+nextPar (ParGen gen chan) = do
+  let (gen', v) = next gen
+  writeChan chan (ParGen gen' chan, v)
+
+genChan :: ParGen -> Chan (ParGen, Int)
+genChan (ParGen _ c) = c
 
 lpad :: Int -> Char -> String -> String
 lpad l c s = replicate (l - length s) c ++ s
 
 -- compare the lower 16 bits for equality
-matches :: Integer -> Integer -> Bool
+matches :: Int -> Int -> Bool
 matches x y = let
-    iVal i = let f = fromInteger :: Integer -> Int
-           in if f i < 0 then error "underflow" else f i
-    shiftSize = finiteBitSize (0 :: Int) - 16
-    -- I prototyped with string comparison first: unsurprisingly,it was fastly
+    shiftSize = finiteBitSize x - 16
+    -- I prototyped with string comparison first: unsurprisingly, it was vastly
     -- slower than bit-shifting
     -- f = lpad 16 '0' . take 16 . reverse . printf "%b"
-    f i = shiftL (iVal i) shiftSize :: Int
+    f i = shiftL i shiftSize :: Int
   in
     (f x) == (f y)
 
 -- run a certain number of iterations, report how many matched
-runJudge :: Gen -> Gen -> Integer -> Integer
+runJudge :: Gen -> Gen -> Int -> Int
 runJudge ga gb iters
   | iters <= 0 = 0
   | otherwise =
@@ -51,3 +75,15 @@ runJudge ga gb iters
       m = if matches va vb then 1 else 0
     in
       m + runJudge ga' gb' (iters - 1)
+
+runJudgePar :: ParGen -> ParGen -> Int -> IO Int
+runJudgePar ga gb iters
+  | iters <= 0 = return 0
+  | otherwise = do
+    async $ nextPar ga
+    async $ nextPar gb
+    (ga', va) <- readChan $ genChan ga
+    (gb', vb) <- readChan $ genChan gb
+    let m = if matches va vb then 1 else 0
+    (m +) <$> runJudgePar ga' gb' (iters - 1)
+
