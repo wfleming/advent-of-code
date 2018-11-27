@@ -11,3 +11,7 @@ main = do
   let m = newMachine <$> opsM
   let m' = runUntil willRecover <$> m
   putStrLn $ "p1: last sounds played = " ++ (show (mLastPlayed <$> m'))
+
+  let s = newSystem <$> opsM
+  let s' = runSys <$> s
+  putStrLn $ "p2: m1 send count = " ++ (show (sSndCount1 <$> s'))

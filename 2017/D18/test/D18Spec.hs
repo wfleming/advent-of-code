@@ -32,6 +32,21 @@ spec = do
        mPos m3 `shouldBe` 3
        regVal m3 'a' `shouldBe` 9
 
+   describe "runSys" $ do
+     it "runs the sample system correctly" $ do
+       let s = newSystem sampleOpsP2
+       let s' = runSys s
+       terminated s' `shouldBe` True
+       sSndCount0 s' `shouldBe` 3
+       sSndCount1 s' `shouldBe` 3
+       regVal (sM0 s') 'a' `shouldBe` 1
+       regVal (sM1 s') 'a' `shouldBe` 1
+       regVal (sM0 s') 'b' `shouldBe` 2
+       regVal (sM1 s') 'b' `shouldBe` 2
+       regVal (sM0 s') 'c' `shouldBe` 1
+       regVal (sM1 s') 'c' `shouldBe` 0
+
+
 sampleOps =
     [ Set (RegRef 'a') (Const 1)
     , Add (RegRef 'a') (Const 2)
@@ -43,4 +58,14 @@ sampleOps =
     , Jgz (RegRef 'a') (Const (-1))
     , Set (RegRef 'a') (Const 1)
     , Jgz (RegRef 'a') (Const (-2))
+    ]
+
+sampleOpsP2 =
+    [ Snd (Const 1)
+    , Snd (Const 2)
+    , Snd (RegRef 'p')
+    , Rcv (RegRef 'a')
+    , Rcv (RegRef 'b')
+    , Rcv (RegRef 'c')
+    , Rcv (RegRef 'd')
     ]
