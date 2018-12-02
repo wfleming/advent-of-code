@@ -1,2 +1,2 @@
 require "spec"
-require "../src/d1"
+require "../src/parser"
