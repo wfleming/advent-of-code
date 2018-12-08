@@ -35,3 +35,13 @@ describe "Machine" do
     m.state.done.join("").must_equal "CABDFE"
   end
 end
+
+describe "Machine2" do
+  it "runs to completion" do
+    deps = parse(TEST_INPUT)
+    m = Machine2.new(deps, 2, 0)
+    m.run!
+
+    m.state.time_elapsed.must_equal 15
+  end
+end
