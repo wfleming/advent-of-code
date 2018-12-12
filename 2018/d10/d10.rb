@@ -93,7 +93,7 @@ def better(state, state2, t)
 
   # puts "_t=#{t}, nc(state)=#{nc1} nc(state2)=#{nc2}"
 
-  # if nc1 < nc2
+  # if nc1 > nc2
   #   state
   # else
   #   state2
@@ -104,11 +104,7 @@ def better(state, state2, t)
 
   puts "_t=#{t}, w(state)=#{w1} w(state2)=#{w2}"
 
-  # TODO -- this is kinda the opposite of better (same for the earlier nc
-  # comparison above): the better one is the one with the lower width. So I must
-  # have another condition inversed somewhere, but it does give the right
-  # answer... leaving it for now, can come back and fix it up
-  if w1 > w2
+  if w1 < w2
     state
   else
     state2
@@ -120,7 +116,7 @@ def p1(lights)
   state = lights
   state2 = move(lights, 1)
 
-  until state2 == better(state, state2, time)
+  until state == better(state, state2, time)
     state3 = move(state2, 1)
     state = state2
     state2 = state3
