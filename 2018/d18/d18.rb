@@ -1,4 +1,3 @@
-require "pry" #DEBUG
 require "forwardable"
 
 Point = Struct.new(:x, :y)
@@ -30,11 +29,11 @@ class Grid
   end
 
   def [](pt)
-    storage[pt.x][pt.y]
+    storage[pt.y][pt.x]
   end
 
   def []=(pt, val)
-    storage[pt.x][pt.y] = val
+    storage[pt.y][pt.x] = val
   end
 
   def each
