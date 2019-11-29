@@ -11,18 +11,30 @@
              (fn [line] (Integer/parseInt line))
              (line-seq rdr)))))
 
-(defn member [x coll]
-  (some (fn [y] (= x y)) coll))
+(defn find-repeated
+  ([deltas] (find-repeated (hash-set) 0 (cycle deltas)))
+  ([seen-freqs cur-freq deltas]
+;   (println "DEBUG" "seen=" seen-freqs "cur=" cur-freq)
+   (if (contains? seen-freqs cur-freq)
+     cur-freq
+     (recur
+       (conj seen-freqs cur-freq)
+       (+ cur-freq (first deltas))
+       (rest deltas))
+   )))
 
-(defn find-repeated [deltas]
-  (reduce
-    (fn [seen-freqs next-delta]
-      (let
-        [next-freq (+ (first seen-freqs) next-delta)]
-        (if (member next-freq seen-freqs)
-           (reduced next-freq)
-           (cons next-freq seen-freqs))))
-    [0] (cycle deltas)))
+; (defn find-repeated [deltas]
+;   (reduce
+;     (fn [seen-and-cur next-delta]
+;       (let
+;         [seen-freqs (first seen-and-cur)
+;          cur-freq (second seen-and-cur)
+;          next-freq (+ cur-freq next-delta)]
+;         (println "DEBUG" "seen=" seen-freqs "cur=" cur-freq "delta=" next-delta)
+;         (if (contains? seen-freqs cur-freq)
+;            (reduced cur-freq)
+;            (list (conj seen-freqs cur-freq) next-freq))))
+;     '((hash-set) 0) (cycle deltas)))
 
 (let
   [ deltas (read-delta (first *command-line-args*))
