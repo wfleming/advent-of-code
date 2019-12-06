@@ -34,12 +34,16 @@ impl IntcodeMachine {
     }
 
     fn step(&mut self) {
-        // println!("DEBUG: step state={:?}", self);
+        // println!("DEBUG: step state={:?} opcode={} from tape={}", self, self.cur_opcode(), self.tape[self.pos]);
         match self.cur_opcode() {
             1 => self.add(),
             2 => self.mult(),
             3 => self.read_input(),
             4 => self.write_output(),
+            5 => self.jmp_if_true(),
+            6 => self.jmp_if_false(),
+            7 => self.less_than(),
+            8 => self.equals(),
             99 => (), // halt
             _ => panic!("bad machine state, invalid opcode from '{}'", self.tape[self.pos]),
         };
@@ -68,8 +72,45 @@ impl IntcodeMachine {
     }
 
     fn write_output(&mut self) {
-        self.outputs.push(self.nth_param(1));
+        let o = self.nth_param(1);
+        self.outputs.push(o);
         self.pos += 2;
+    }
+
+    fn jmp_if_true(&mut self) {
+        if self.nth_param(1) != 0 {
+            self.pos = self.nth_param(2) as usize;
+        } else {
+            self.pos += 3;
+        }
+    }
+
+    fn jmp_if_false(&mut self) {
+        if self.nth_param(1) == 0 {
+            self.pos = self.nth_param(2) as usize;
+        } else {
+            self.pos += 3;
+        }
+    }
+
+    fn less_than(&mut self) {
+        let target: usize = self.tape[self.pos + 3] as usize;
+        if self.nth_param(1) < self.nth_param(2) {
+            self.tape[target] = 1;
+        } else {
+            self.tape[target] = 0;
+        }
+        self.pos += 4;
+    }
+
+    fn equals(&mut self) {
+        let target: usize = self.tape[self.pos + 3] as usize;
+        if self.nth_param(1) == self.nth_param(2) {
+            self.tape[target] = 1;
+        } else {
+            self.tape[target] = 0;
+        }
+        self.pos += 4;
     }
 
     fn nth_param(&self, n: u32) -> i32 {
@@ -127,11 +168,16 @@ fn main() {
     let tape = read_tape(&input);
 
     // p1 - intput 1, run to halt, show outputs
-    let tape_p1 = tape.clone();
-    let mut machine_p1 = new(tape_p1);
+    let mut machine_p1 = new(tape.clone());
     machine_p1.push_input(1);
     machine_p1.run_until_exit();
     println!("p1: outputs = {:?}", machine_p1.outputs);
+
+    // p1 - intput 1, run to halt, show outputs
+    let mut machine_p2 = new(tape.clone());
+    machine_p2.push_input(5);
+    machine_p2.run_until_exit();
+    println!("p2: outputs = {:?}", machine_p2.outputs);
 }
 
 mod test {
