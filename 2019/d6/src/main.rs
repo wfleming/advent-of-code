@@ -55,29 +55,54 @@ where I: Iterator<Item = &'a Node<String>>
     iter.fold(0, |acc, node| acc + node_orbits_count(node) + tree_total_orbits_count(node.iter()))
 }
 
-fn find_node_bfs<'a, I>(iter: &I, val: &str) -> &'a Node<String>
-where I: Iterator<Item = &'a Node<String>>
+fn node_path_down<'a>(node: &'a Node<String>, val: &str) -> Option<Vec<&'a Node<String>>>
 {
-    for n in iter {
-        if n.data == val {
-            return &n;
-        } else {
-            return find_node_bfs(&n.iter(), val);
+    let mut path = vec![node];
+
+    for c in node.iter() {
+        // println!("DEBUG: node_path node={} child={}", node.data, c.data);
+        if c.data == val {
+            path.push(c);
+            return Some(path);
+        } else if let Some(mut sub_path) = node_path_down(c, val) {
+            path.append(&mut sub_path);
+            return Some(path);
         }
     }
 
-    panic!("should have returned by now");
+    None
 }
 
-fn path_between(start: &str, end: &str, tree: Tree<String>) -> Vec<Node<String>> {
-    let start_node = find_node_bfs(&tree.iter(), start);
+fn path_between<'a>(start: &str, end: &str, tree: &'a Tree<String>) -> Vec<&'a Node<String>> {
+    let target_from_root = node_path_down(tree.root(), end)
+        .expect("target should be found");
+    //println!("DEBUG: target_from_root={:?}", target_from_root);
 
-    // TODO
-    vec![]
-}
+    let start_from_root = node_path_down(tree.root(), start)
+        .expect("start should be found");
+    //println!("DEBUG: start_from_root{:?}", start_from_root);
 
-fn search_paths() {
-    // TODO
+    // find the shared point closet to start
+    let split_point = start_from_root.iter()
+        .rev()
+        .find(|n| target_from_root.contains(n))
+        .expect("split point should be found");
+    // println!("DEBUG: split point found at {}", split_point.data);
+
+    let mut path = start_from_root.iter()
+        .rev()
+        .take_while(|n| n.data != split_point.data)
+        .map(|x| *x)
+        .collect::<Vec<&'a Node<String>>>();
+
+    let mut part_2 = target_from_root.iter()
+        .skip_while(|n| n.data != split_point.data)
+        .map(|x| *x)
+        .collect::<Vec<&'a Node<String>>>();
+
+    path.append(&mut part_2);
+
+    path
 }
 
 fn main() {
@@ -88,5 +113,10 @@ fn main() {
     // println!("DEBUG: built tree {:?}", tree);
     println!("p1: total orbits count = {}", tree_total_orbits_count(tree.iter()));
 
-    println!("p2: transfers needed = {}", tree_total_orbits_count(tree.iter()));
+    let path = path_between("YOU", "SAN", &tree);
+    let path_names: Vec<&String> = path.iter()
+        .map(|x| &x.data)
+        .collect();
+    println!("p2: transfer path = {:?}", path_names);
+    println!("p2: # transfers = {}", path_names.len() - 3);
 }
