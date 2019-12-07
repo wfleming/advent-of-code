@@ -1,7 +1,8 @@
 use std::env::args;
 use std::fs::File;
-use std::io::BufReader;
 use std::io::BufRead;
+use std::io::BufReader;
+use std::ops::Range;
 use std::vec::Vec;
 
 #[derive(Debug)]
@@ -30,8 +31,21 @@ impl IntcodeMachine {
     fn run_until_exit(&mut self) {
         while !self.is_exited() {
             self.step();
-        };
+        }
     }
+
+    fn run_until_exit_or_input_wait(&mut self) {
+        loop {
+            if self.is_exited() {
+                break;
+            }
+            if self.cur_opcode() == 3 && self.inputs.len() == 0 {
+                break;
+            }
+            self.step();
+        }
+    }
+
 
     fn step(&mut self) {
         // println!("DEBUG: step state={:?} opcode={} from tape={}", self, self.cur_opcode(), self.tape[self.pos]);
@@ -68,7 +82,7 @@ impl IntcodeMachine {
     }
 
     fn read_input(&mut self) {
-        let dest_pos = self.nth_param(1) as usize;
+        let dest_pos = self.tape[self.pos + 1] as usize;
         // println!("DEBUG: machine reading inputs. input queue={:?}", self.inputs);
         self.tape[dest_pos] = self.inputs.remove(0);
         // println!("DEBUG: machine reading inputs. got dest_pos={}, input={}, full tape={:?}", dest_pos, self.tape[dest_pos], self.tape);
@@ -171,26 +185,25 @@ fn read_tape(line: &str) -> Vec<i32> {
     }).collect()
 }
 
-fn input_choices() -> Vec<Vec<i32>> {
+fn input_choices(range: Range<i32>) -> Vec<Vec<i32>> {
     let mut choices = Vec::new();
 
-    for phase_a in 0..5 {
-        choices.append(&mut build_choices(vec![phase_a]));
+    for phase_a in range.clone() {
+        choices.append(&mut build_choices(vec![phase_a], range.clone()));
     }
 
     choices
 }
 
-fn build_choices(phases: Vec<i32>) -> Vec<Vec<i32>> {
+fn build_choices(phases: Vec<i32>, range: Range<i32>) -> Vec<Vec<i32>> {
     if phases.len() == 5 {
         vec![phases]
     } else {
-        (0..5)
-            .filter(|x| !phases.contains(x))
+        range.clone().filter(|x| !phases.contains(x))
             .flat_map(|x| {
                 let mut phases2 = phases.clone();
                 phases2.push(x);
-                build_choices(phases2)
+                build_choices(phases2, range.clone())
             }).collect()
     }
 }
@@ -213,14 +226,39 @@ fn thrust_signal(phases: &Vec<i32>, tape: &Vec<i32>) -> i32 {
     next_amp_input
 }
 
+fn thrust_signal_feedback_loop(phases: &Vec<i32>, tape: &Vec<i32>) -> i32 {
+    let mut amps = vec![
+        new(tape.clone()), // a
+        new(tape.clone()), // b
+        new(tape.clone()), // c
+        new(tape.clone()), // d
+        new(tape.clone()), // e
+    ];
+
+    for i in 0..5 {
+        amps[i].push_input(phases[i]);
+    }
+    amps[0].push_input(0); // "seed" previous amp value
+
+    let mut running_amp = 0;
+    while amps.iter().any(|a| !a.is_exited()) {
+        amps[running_amp].run_until_exit_or_input_wait();
+        let out = *amps[running_amp].outputs.last().expect("should be some output");
+        running_amp = (running_amp + 1) % amps.len();
+        amps[running_amp].push_input(out);
+    }
+
+    *amps[4].outputs.last().expect("should be some output")
+}
+
 fn main() {
     let mut argv = args();
     argv.next();
     let input = argv.next().expect("provide a filename");
     let tape = read_tape(&tape_from_file(&input));
 
-    // p1 - intput 1, run to halt, show outputs
-    let all_phases = input_choices();
+    // p1
+    let all_phases = input_choices(0..5);
     // println!("DEBUG: all input choices = {:?}", all_phases);
     let mut best_phases: Option<&Vec<i32>> = None;
     let mut best_signal = 0;
@@ -232,6 +270,19 @@ fn main() {
         }
     }
     println!("p1: best phases = {:?}, max signal = {}", best_phases, best_signal);
+
+    // p2
+    let all_phases = input_choices(5..10);
+    let mut best_phases: Option<&Vec<i32>> = None;
+    let mut best_signal = 0;
+    for phases in all_phases.iter() {
+        let s = thrust_signal_feedback_loop(&phases, &tape);
+        if s > best_signal {
+            best_phases = Some(&phases);
+            best_signal = s;
+        }
+    }
+    println!("p2: best phases = {:?}, max signal = {}", best_phases, best_signal);
 }
 
 #[cfg(test)]
@@ -239,7 +290,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_sample_prog_1_simple() {
+    fn test_p1_sample_1_simple() {
         // I think this program = x + (y * 10)
         let tape = "3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0";
         let tape = read_tape(&tape);
@@ -253,12 +304,22 @@ mod test {
     }
 
     #[test]
-    fn test_sample_prog_1_phases_43210() {
+    fn test_p1_sample_1_phases_43210() {
         let tape = "3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0";
         let tape = read_tape(&tape);
 
         let signal = thrust_signal(&vec![4, 3, 2, 1, 0], &tape);
 
         assert_eq!(43210, signal);
+    }
+
+    #[test]
+    fn test_p2_sample_1() {
+        let tape = "3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5";
+        let tape = read_tape(&tape);
+
+        let signal = thrust_signal_feedback_loop(&vec![9, 8, 7, 6, 5], &tape);
+
+        assert_eq!(139629729, signal);
     }
 }
