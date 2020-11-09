@@ -16,8 +16,17 @@ fn main() {
     let mut machine = Machine::new(tape.clone());
     let mut robot = Robot::new();
     robot.run(&mut machine);
-    println!("p2: panels painted = {:?}", robot.panels_count());
-    println!("p2: outputs = {:?}", machine.outputs.len());
+    println!("p1: panels painted = {:?}", robot.panels_count());
+    println!("p1: outputs = {:?}", machine.outputs.len());
+
+    // p2
+    let mut machine = Machine::new(tape.clone());
+    let mut robot = Robot::new();
+    // set starting panel to white
+    robot.paint_panel(robot.pos.clone(), 1);
+    robot.run(&mut machine);
+    println!("p2: printing the hull below");
+    println!("{}", robot.hull_str());
 }
 
 #[cfg(test)]

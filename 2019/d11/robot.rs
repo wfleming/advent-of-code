@@ -15,9 +15,9 @@ pub enum Dir {
 }
 
 pub struct Robot {
-    hull: HashMap<Point, i32>,
-    dir: Dir,
-    pos: Point,
+    pub hull: HashMap<Point, i32>,
+    pub dir: Dir,
+    pub pos: Point,
 }
 
 impl Robot {
@@ -50,14 +50,15 @@ impl Robot {
                 } else { // turn output
                     self.dir = self.next_dir(out_val);
                     self.pos = self.next_pos();
-
-                    // provide next input of new current position color
-                    // machine.push_input(BigInt::from_i32(self.current_color()).unwrap());
                 }
 
                 output_idx += 1;
             }
         }
+    }
+
+    pub fn paint_panel(&mut self, pos: Point, color: i32) {
+      self.hull.insert(pos, color);
     }
 
     pub fn panels_count(&self) -> usize {
@@ -96,6 +97,50 @@ impl Robot {
             },
             _ => panic!("unexpected output for turn: {:?}", turn),
         }
+    }
+
+    // map the hull hashmap to a string. ' ' is black, # is white
+    pub fn hull_str(&self) -> String {
+        let mut min_x = i32::MAX;
+        let mut max_x = i32::MIN;
+        let mut min_y = i32::MAX;
+        let mut max_y = i32::MIN;
+
+        // get the bounds of of the coordinates
+        for point in self.hull.keys() {
+            let x = point.0.to_i32().expect("pretty sure coordinates fit in i32 for this one");
+            let y = point.1.to_i32().expect("pretty sure coordinates fit in i32 for this one");
+
+            if x < min_x { min_x = x }
+            if x > max_x { max_x = x }
+            if y < min_y { min_y = y }
+            if y > max_y { max_y = y }
+        }
+
+        println!("DEBUG: min_x = {}, max_x = {}, min_y = {}, max_y = {}", min_x, max_x, min_y, max_y);
+
+        let mut hull_str = String::new();
+        hull_str.reserve(((max_x - min_x) * (max_y - min_y)) as usize);
+
+        // go row-by-row
+        for y in min_y..(max_y + 1) {
+            // col-by-col, get color at position & append to string
+            for x in min_x..(max_x + 1) {
+                let p = (BigInt::from_i32(x).unwrap(), BigInt::from_i32(y).unwrap());
+                let c = *self.hull.get(&p).unwrap_or(&0);
+
+                match c {
+                    0 => hull_str.push_str(" "),
+                    1 => hull_str.push_str("#"),
+                    _ => panic!("{:?} is not a valid color on the hull", c),
+                }
+            }
+
+            // at end of row, newline
+            hull_str.push_str("\n")
+        }
+
+        hull_str
     }
 }
 
