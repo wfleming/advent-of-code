@@ -16,4 +16,9 @@ fn main() {
     let mut sim1 = Simulation::new(moons.clone());
     sim1.step_n(1000);
     println!("p1: after 1000 steps, total energy = {}", sim1.total_energy());
+
+    // p2
+    let mut sim2 = Simulation::new(moons.clone());
+    let cycles = sim2.find_cycles();
+    println!("p2: cycling took {} steps", cycles);
 }

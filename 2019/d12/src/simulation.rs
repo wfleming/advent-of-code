@@ -75,9 +75,140 @@ impl Simulation {
         self.moons.iter().map(|moon| {
             let pot = moon.pos.0.abs() + moon.pos.1.abs() + moon.pos.2.abs();
             let kin = moon.vel.0.abs() + moon.vel.1.abs() + moon.vel.2.abs();
-            (pot * kin)
+            pot * kin
         }).sum()
     }
+
+    pub fn find_cycles(&mut self) -> u64 {
+        let x_steps = self.find_x_rotation();
+        let y_steps = self.find_y_rotation();
+        let z_steps = self.find_z_rotation();
+
+        lcm(lcm(x_steps, y_steps), z_steps)
+    }
+
+    fn find_x_rotation(&mut self) -> u64 {
+        let moons_initial = self.moons.clone();
+        let mut steps = 0;
+
+        while self.moons != moons_initial || steps == 0 {
+            self.step_dim_x();
+            steps += 1;
+        }
+
+        steps
+    }
+
+    fn step_dim_x(&mut self) {
+        // apply gravity
+        for idx1 in 0..self.moons.len() {
+            for idx2 in (idx1 + 1)..self.moons.len() {
+                if self.moons[idx1].pos.0 < self.moons[idx2].pos.0 {
+                    self.moons[idx1].vel.0 += 1;
+                    self.moons[idx2].vel.0 -= 1;
+                } else if self.moons[idx2].pos.0 < self.moons[idx1].pos.0 {
+                    self.moons[idx2].vel.0 += 1;
+                    self.moons[idx1].vel.0 -= 1;
+                }
+            }
+        }
+        // apply velocity
+        for mut moon in &mut self.moons {
+            moon.pos = (
+                moon.pos.0 + moon.vel.0,
+                moon.pos.1,
+                moon.pos.2
+            )
+        }
+    }
+
+    fn find_y_rotation(&mut self) -> u64 {
+        let moons_initial = self.moons.clone();
+        let mut steps = 0;
+
+        while self.moons != moons_initial || steps == 0 {
+            self.step_dim_y();
+            steps += 1;
+        }
+
+        steps
+    }
+
+    fn step_dim_y(&mut self) {
+        // apply gravity
+        for idx1 in 0..self.moons.len() {
+            for idx2 in (idx1 + 1)..self.moons.len() {
+                if self.moons[idx1].pos.1 < self.moons[idx2].pos.1 {
+                    self.moons[idx1].vel.1 += 1;
+                    self.moons[idx2].vel.1 -= 1;
+                } else if self.moons[idx2].pos.1 < self.moons[idx1].pos.1 {
+                    self.moons[idx2].vel.1 += 1;
+                    self.moons[idx1].vel.1 -= 1;
+                }
+            }
+        }
+        // apply velocity
+        for mut moon in &mut self.moons {
+            moon.pos = (
+                moon.pos.0,
+                moon.pos.1 + moon.vel.1,
+                moon.pos.2
+            )
+        }
+    }
+
+    fn find_z_rotation(&mut self) -> u64 {
+        let moons_initial = self.moons.clone();
+        let mut steps = 0;
+
+        while self.moons != moons_initial || steps == 0 {
+            self.step_dim_z();
+            steps += 1;
+        }
+
+        steps
+    }
+
+    fn step_dim_z(&mut self) {
+        // apply gravity
+        for idx1 in 0..self.moons.len() {
+            for idx2 in (idx1 + 1)..self.moons.len() {
+                if self.moons[idx1].pos.2 < self.moons[idx2].pos.2 {
+                    self.moons[idx1].vel.2 += 1;
+                    self.moons[idx2].vel.2 -= 1;
+                } else if self.moons[idx2].pos.2 < self.moons[idx1].pos.2 {
+                    self.moons[idx2].vel.2 += 1;
+                    self.moons[idx1].vel.2 -= 1;
+                }
+            }
+        }
+        // apply velocity
+        for mut moon in &mut self.moons {
+            moon.pos = (
+                moon.pos.0,
+                moon.pos.1,
+                moon.pos.2 + moon.vel.2,
+            )
+        }
+    }
+}
+
+fn lcm(a: u64, b: u64) -> u64 {
+    a * b / gcd(a, b)
+}
+
+fn gcd(a: u64, b: u64) -> u64 {
+    let mut a_prime = a;
+    let mut b_prime = b;
+    let mut c;
+
+    while b_prime > 0 {
+        c = a_prime % b_prime; // store writing to b_prime
+        a_prime = b_prime;
+        b_prime = c;
+    }
+
+    a_prime
 }
 
 // leftover from attempt at making the above less repetitive
@@ -106,6 +237,15 @@ mod test {
         ]
     }
 
+    fn example_2_initial_moons() -> Vec<Moon> {
+        vec![
+            Moon { pos: (-8, -10, 0), vel: (0, 0, 0) },
+            Moon { pos: (5, 5, 10), vel: (0, 0, 0) },
+            Moon { pos: (2, -7, 3), vel: (0, 0, 0) },
+            Moon { pos: (9, -8, -3), vel: (0, 0, 0) },
+        ]
+    }
+
     #[test]
     fn test_example_1_1_step() {
         let mut sim = Simulation::new(example_1_initial_moons());
@@ -125,5 +265,23 @@ mod test {
         let mut sim = Simulation::new(example_1_initial_moons());
         sim.step_n(10);
         assert_eq!(sim.total_energy(), 179);
+    }
+
+    #[test]
+    fn test_p2_example_2() {
+        let mut sim = Simulation::new(example_2_initial_moons());
+        // let x_steps = sim.find_x_rotation();
+        // println!("x steps = {}", x_steps);
+        // let y_steps = sim.find_y_rotation();
+        // println!("y steps = {}", y_steps);
+        // let z_steps = sim.find_z_rotation();
+        // println!("z steps = {}", z_steps);
+
+        // let cycles = lcm(lcm(x_steps, y_steps), z_steps);
+        // println!("cycles = {}", cycles);
+
+        let cycles = sim.find_cycles();
+        assert_eq!(cycles, 4686774924);
+
     }
 }
