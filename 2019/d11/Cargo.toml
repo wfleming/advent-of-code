@@ -11,4 +11,3 @@ intcode = { path = "../intcode" }
 
 [[bin]]
 name = "d11"
-path = "main.rs"

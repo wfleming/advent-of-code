@@ -117,8 +117,6 @@ impl Robot {
             if y > max_y { max_y = y }
         }
 
-        println!("DEBUG: min_x = {}, max_x = {}, min_y = {}, max_y = {}", min_x, max_x, min_y, max_y);
-
         let mut hull_str = String::new();
         hull_str.reserve(((max_x - min_x) * (max_y - min_y)) as usize);
 
