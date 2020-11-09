@@ -1,9 +1,9 @@
+use num_bigint::{BigInt};
 use num_traits::cast::FromPrimitive;
 use num_traits::cast::ToPrimitive;
 use num_traits::{Zero, One};
-use num_bigint::{BigInt};
-use std::vec::Vec;
 use std::collections::HashMap;
+use std::vec::Vec;
 
 #[derive(Debug)]
 #[derive(Clone)]
@@ -48,10 +48,7 @@ impl Machine {
 
     pub fn run_until_exit_or_input_wait(&mut self) {
         loop {
-            if self.is_exited() {
-                break;
-            }
-            if self.cur_opcode() == 3 && self.inputs.len() == 0 {
+            if self.is_exited() || self.is_waiting_for_input() {
                 break;
             }
             self.step();
@@ -178,8 +175,12 @@ impl Machine {
         }
     }
 
-    fn is_exited(&self) -> bool {
-          99 == self.cur_opcode()
+    pub fn is_exited(&self) -> bool {
+        99 == self.cur_opcode()
+    }
+
+    pub fn is_waiting_for_input(&self) -> bool {
+        self.cur_opcode() == 3 && self.inputs.len() == 0
     }
 
     fn tape_at(&self, pos: BigInt) -> BigInt {
