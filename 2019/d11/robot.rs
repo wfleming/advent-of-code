@@ -1,7 +1,7 @@
 use intcode::num_bigint::BigInt;
 use intcode::num_traits::cast::FromPrimitive;
 use intcode::num_traits::cast::ToPrimitive;
-use intcode::num_traits::{Zero,One};
+use intcode::num_traits::Zero;
 use intcode::{machine::Machine};
 use std::collections::HashMap;
 
@@ -30,21 +30,32 @@ impl Robot {
     }
 
     pub fn run(&mut self, machine: &mut Machine) {
+        let mut output_idx: usize = 0;
+
         while !machine.is_exited() {
-            machine.run_until_exit_or_input_wait();
+            // give input of current panel color if asked
+            if machine.is_waiting_for_input() {
+                machine.push_input(BigInt::from_i32(self.current_color()).unwrap());
+            }
 
-            // give input of current panel color
-            machine.push_input(BigInt::from_i32(self.current_color()).unwrap());
+            machine.step();
 
-            // if there's output, the bot already painted
-            if machine.outputs.len() >= 2 && !machine.is_exited() {
-                // use the output to set hull & change dir/pos
-                let color = machine.outputs.get(machine.outputs.len() - 2).unwrap();
-                let turn = machine.outputs.get(machine.outputs.len() - 1).unwrap();
+            // read output
+            while output_idx < machine.outputs.len() {
+                let out_val = machine.outputs.get(output_idx).unwrap().to_i32().expect("should be 0 or 1");
 
-                self.hull.insert(self.pos.clone(), color.to_i32().expect("should be 0 or 1"));
-                self.dir = self.next_dir(turn.to_i32().expect("should be 0 or 1"));
-                self.pos = self.next_pos();
+                // color output
+                if output_idx % 2 == 0 { // color output
+                    self.hull.insert(self.pos.clone(), out_val);
+                } else { // turn output
+                    self.dir = self.next_dir(out_val);
+                    self.pos = self.next_pos();
+
+                    // provide next input of new current position color
+                    // machine.push_input(BigInt::from_i32(self.current_color()).unwrap());
+                }
+
+                output_idx += 1;
             }
         }
     }

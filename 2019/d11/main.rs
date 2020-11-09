@@ -17,6 +17,7 @@ fn main() {
     let mut robot = Robot::new();
     robot.run(&mut machine);
     println!("p2: panels painted = {:?}", robot.panels_count());
+    println!("p2: outputs = {:?}", machine.outputs.len());
 }
 
 #[cfg(test)]

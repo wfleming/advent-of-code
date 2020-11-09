@@ -60,7 +60,7 @@ impl Machine {
     }
 
 
-    fn step(&mut self) {
+    pub fn step(&mut self) {
         // println!(
         //     "DEBUG: step pos={} rel_base={} opcode={} from tape_at_pos={} tape_at_100={} tape_at_101={}",
         //     self.pos, self.relative_base, self.cur_opcode(), self.tape_at(self.pos.clone()), self.tape_at(BigInt::from_i32(100).unwrap()), self.tape_at(BigInt::from_i32(101).unwrap())
