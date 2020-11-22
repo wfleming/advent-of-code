@@ -1,10 +1,10 @@
+use intcode::machine::Machine;
 use intcode::num_bigint::BigInt;
 use intcode::num_traits::cast::FromPrimitive;
 use intcode::num_traits::cast::ToPrimitive;
 use intcode::num_traits::One;
-use intcode::machine::Machine;
-use std::collections::HashSet;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fmt;
 use std::ops::Range;
 
@@ -15,12 +15,12 @@ fn distance(p1: Point, p2: Point) -> i64 {
     (p1.0 - p2.0).abs() + (p1.1 - p2.1).abs()
 }
 
-#[derive(Clone,Copy,Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Direction {
     North,
     South,
     West,
-    East
+    East,
 }
 
 impl Direction {
@@ -33,7 +33,7 @@ impl Direction {
         }
     }
 
-    pub fn next_point(&self, from: Point) -> Point{
+    pub fn next_point(&self, from: Point) -> Point {
         match self {
             Self::North => (from.0, from.1 - 1),
             Self::South => (from.0, from.1 + 1),
@@ -43,12 +43,12 @@ impl Direction {
     }
 }
 
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub struct Map {
-    walls: HashSet<Point>, // points that are a wall
-    interior: HashSet<Point>, // points droid can access - includes current droid pos & oxy point (if known)
-    pub droid: Point, // current droid pos
-    oxy: Option<Point>, // the discovered position of the oxygen system
+    walls: HashSet<Point>,        // points that are a wall
+    pub interior: HashSet<Point>, // points droid can access - includes current droid pos & oxy point (if known)
+    pub droid: Point,             // current droid pos
+    pub oxy: Option<Point>,       // the discovered position of the oxygen system
 }
 
 impl fmt::Display for Map {
@@ -62,15 +62,15 @@ impl fmt::Display for Map {
             let mut line = String::new();
 
             for x in x_range.clone() {
-                if self.walls.contains(&(x,y)) {
+                if self.walls.contains(&(x, y)) {
                     line.push('#');
-                } else if self.oxy == Some((x,y)) {
+                } else if self.oxy == Some((x, y)) {
                     line.push('O');
-                } else if self.droid == (x,y) {
+                } else if self.droid == (x, y) {
                     line.push('D');
-                } else if (x,y) == (0,0) {
+                } else if (x, y) == (0, 0) {
                     line.push('x'); // mark the starting point for visual examination
-                } else if self.interior.contains(&(x,y)) {
+                } else if self.interior.contains(&(x, y)) {
                     line.push('.');
                 } else {
                     line.push(' ');
@@ -91,7 +91,7 @@ impl Map {
         let mut min_y = i64::MAX;
         let mut max_y = i64::MIN;
 
-        self.walls.union(&self.interior).for_each(|(x,y)| {
+        self.walls.union(&self.interior).for_each(|(x, y)| {
             if *x < min_x {
                 min_x = *x
             }
@@ -141,18 +141,19 @@ impl Map {
     }
 }
 
-
 fn unexplored_dirs(map: &Map) -> Vec<Direction> {
-    map.available_steps().iter().filter(
-        |d| !map.known_point(d.next_point(map.droid))
-    ).map(|d| d.clone()).collect()
+    map.available_steps()
+        .iter()
+        .filter(|d| !map.known_point(d.next_point(map.droid)))
+        .map(|d| d.clone())
+        .collect()
 }
 
 pub fn discover_map(machine: &mut Machine) -> Map {
     let mut map = Map {
         walls: HashSet::new(),
-        interior: [(0,0)].iter().cloned().collect(),
-        droid: (0,0),
+        interior: [(0, 0)].iter().cloned().collect(),
+        droid: (0, 0),
         oxy: None,
     };
 
@@ -180,18 +181,21 @@ fn walk_bfs(machine: &mut Machine, map: &mut Map, current_heading: Direction) {
         // read output
         while output_idx < machine.outputs.len() {
             match machine.outputs.get(output_idx).unwrap().to_i64().unwrap() {
-                0 => { // hit a wall - add wall point & turn heading
+                0 => {
+                    // hit a wall - add wall point & turn heading
                     map.walls.insert(current_heading.next_point(map.droid));
-                },
-                1 => { // changed pos - change droid & add interior point
+                }
+                1 => {
+                    // changed pos - change droid & add interior point
                     map.droid = current_heading.next_point(map.droid);
                     map.interior.insert(map.droid);
-                },
-                2 => { // changed pos & found oxygen - set all of those
+                }
+                2 => {
+                    // changed pos & found oxygen - set all of those
                     map.droid = current_heading.next_point(map.droid);
                     map.interior.insert(map.droid);
                     map.oxy = Some(map.droid);
-                },
+                }
                 _ => panic!("invalid output"),
             }
             output_idx += 1;
@@ -240,7 +244,8 @@ pub fn a_star(starting_map: Map) -> Vec<Direction> {
         open_set.sort_by_key(|m| distance(m.droid, m.oxy.unwrap()));
         let current = open_set.remove(0);
 
-        if current.droid == current.oxy.unwrap() { // this is the goal!
+        if current.droid == current.oxy.unwrap() {
+            // this is the goal!
             return g_score[&current.droid].clone();
         }
 
@@ -260,13 +265,14 @@ pub fn a_star(starting_map: Map) -> Vec<Direction> {
                 // consider adding to open set again. This prevents walking in circles or pacing
                 if g_for_neighbor.len() < old_neighor_g_score.len() {
                     g_score.insert(neighbor.droid, g_for_neighbor);
-                    if !neighbor_in_open_set   {
+                    if !neighbor_in_open_set {
                         open_set.push(neighbor);
                     }
                 }
-            } else { // we haven't see this state yet. insert the g score
+            } else {
+                // we haven't see this state yet. insert the g score
                 g_score.insert(neighbor.droid, g_for_neighbor);
-                if !neighbor_in_open_set  {
+                if !neighbor_in_open_set {
                     open_set.push(neighbor);
                 }
             }
