@@ -1,7 +1,7 @@
 use crate::reaction::*;
 use std::fs::File;
-use std::vec::Vec;
 use std::io::Read;
+use std::vec::Vec;
 
 pub fn parse_file(path: &str) -> Vec<Reaction> {
     let mut file = File::open(path).expect("couldn't open file");
@@ -12,31 +12,41 @@ pub fn parse_file(path: &str) -> Vec<Reaction> {
 }
 
 pub fn parse_str(lines: &str) -> Vec<Reaction> {
-    lines.trim().split("\n").
-        map(|line| parse_reaction(line)).
-        collect()
+    lines
+        .trim()
+        .split("\n")
+        .map(|line| parse_reaction(line))
+        .collect()
 }
 
-fn parse_reaction(line: &str) -> Reaction
-{
+fn parse_reaction(line: &str) -> Reaction {
     let parts: Vec<&str> = line.trim().split(" => ").collect();
     if parts.len() != 2 {
         panic!("line '{}' should have 2 parts - inputs and outputs", line);
     }
 
-    let inputs: Vec<MaterialAmount> = parts[0].split(", ").map(|input_str| {
-        let cnt_and_name: Vec<&str> = input_str.split(" ").collect();
-        if cnt_and_name.len() != 2 {
-            panic!("inputs '{}' should have 2 parts - count and material", parts[0]);
-        }
-        let cnt: i64 = cnt_and_name[0].parse().unwrap();
+    let inputs: Vec<MaterialAmount> = parts[0]
+        .split(", ")
+        .map(|input_str| {
+            let cnt_and_name: Vec<&str> = input_str.split(" ").collect();
+            if cnt_and_name.len() != 2 {
+                panic!(
+                    "inputs '{}' should have 2 parts - count and material",
+                    parts[0]
+                );
+            }
+            let cnt: i64 = cnt_and_name[0].parse().unwrap();
 
-        (cnt, String::from(cnt_and_name[1]))
-    }).collect();
+            (cnt, String::from(cnt_and_name[1]))
+        })
+        .collect();
 
     let out_parts: Vec<&str> = parts[1].split(" ").collect();
     if out_parts.len() != 2 {
-        panic!("ouput '{}' should have 2 parts - count and material",  parts[1]);
+        panic!(
+            "ouput '{}' should have 2 parts - count and material",
+            parts[1]
+        );
     }
     let out_cnt: i64 = out_parts[0].parse().unwrap();
 
@@ -58,7 +68,11 @@ mod test {
         assert_eq!(
             reaction,
             Reaction {
-                inputs: vec![(1, "A".to_string()), (2, "B".to_string()), (3, "C".to_string())],
+                inputs: vec![
+                    (1, "A".to_string()),
+                    (2, "B".to_string()),
+                    (3, "C".to_string())
+                ],
                 output: (4, "D".to_string()),
             }
         );
@@ -73,7 +87,11 @@ mod test {
             reactions,
             vec![
                 Reaction {
-                    inputs: vec![(1, "A".to_string()), (2, "B".to_string()), (3, "C".to_string())],
+                    inputs: vec![
+                        (1, "A".to_string()),
+                        (2, "B".to_string()),
+                        (3, "C".to_string())
+                    ],
                     output: (4, "D".to_string()),
                 },
                 Reaction {

@@ -1,9 +1,9 @@
 mod game;
 
 use game::*;
-use intcode::{machine::Machine, tape};
 use intcode::num_bigint::BigInt;
 use intcode::num_traits::cast::FromPrimitive;
+use intcode::{machine::Machine, tape};
 use std::env::args;
 
 fn main() {
@@ -16,9 +16,11 @@ fn main() {
     let mut machine1 = Machine::new(tape.clone());
     let mut game1 = Game::new();
     game1.run(&mut machine1);
-    let blocks_count = game1.tiles.iter().filter(
-        |(_key, tile_type)| **tile_type == Entity::Block
-        ).count();
+    let blocks_count = game1
+        .tiles
+        .iter()
+        .filter(|(_key, tile_type)| **tile_type == Entity::Block)
+        .count();
     println!("p1: there are {} blocks", blocks_count);
     println!("{}", game1.display());
 

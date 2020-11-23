@@ -1,21 +1,20 @@
+use intcode::machine::Machine;
 use intcode::num_bigint::BigInt;
 use intcode::num_traits::cast::FromPrimitive;
 use intcode::num_traits::cast::ToPrimitive;
-use intcode::machine::Machine;
 use std::collections::HashMap;
 use std::thread::sleep;
 use std::time::Duration;
 
 pub type Point = (i64, i64);
 
-#[derive(PartialEq)]
-#[derive(Eq)]
+#[derive(PartialEq, Eq)]
 pub enum Entity {
     Empty,
     Wall,
     Block,
     Paddle,
-    Ball
+    Ball,
 }
 
 impl Entity {
@@ -63,7 +62,6 @@ impl Game {
             if machine.is_waiting_for_input() {
                 machine.push_input(BigInt::from_i32(self.joystick).unwrap());
 
-
                 // only displaying when paused for input means faster rendering
                 if self.tiles.len() > 0 {
                     println!("{}", self.display());
@@ -76,13 +74,30 @@ impl Game {
             // read output (comes in blocks of 3, so wait to be 3 behind to process)
             while output_idx + 2 < machine.outputs.len() {
                 let x = machine.outputs.get(output_idx).unwrap().to_i64().unwrap();
-                let y = machine.outputs.get(output_idx + 1).unwrap().to_i64().unwrap();
+                let y = machine
+                    .outputs
+                    .get(output_idx + 1)
+                    .unwrap()
+                    .to_i64()
+                    .unwrap();
 
-                if x == -1 && y == 0 { // score, not tile
-                    let score = machine.outputs.get(output_idx + 2).unwrap().to_u32().unwrap();
+                if x == -1 && y == 0 {
+                    // score, not tile
+                    let score = machine
+                        .outputs
+                        .get(output_idx + 2)
+                        .unwrap()
+                        .to_u32()
+                        .unwrap();
                     self.score = score;
-                } else { // normal tile
-                    let entity_code = machine.outputs.get(output_idx + 2).unwrap().to_u32().unwrap();
+                } else {
+                    // normal tile
+                    let entity_code = machine
+                        .outputs
+                        .get(output_idx + 2)
+                        .unwrap()
+                        .to_u32()
+                        .unwrap();
                     let entity = Entity::from_code(entity_code);
 
                     self.tiles.insert((x, y), entity);
@@ -170,6 +185,4 @@ impl Game {
 
         s
     }
-
 }
-

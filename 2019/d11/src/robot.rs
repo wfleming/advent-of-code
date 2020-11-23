@@ -1,8 +1,8 @@
+use intcode::machine::Machine;
 use intcode::num_bigint::BigInt;
 use intcode::num_traits::cast::FromPrimitive;
 use intcode::num_traits::cast::ToPrimitive;
 use intcode::num_traits::Zero;
-use intcode::{machine::Machine};
 use std::collections::HashMap;
 
 pub type Point = (BigInt, BigInt);
@@ -11,7 +11,7 @@ pub enum Dir {
     Up,
     Down,
     Left,
-    Right
+    Right,
 }
 
 pub struct Robot {
@@ -42,12 +42,19 @@ impl Robot {
 
             // read output
             while output_idx < machine.outputs.len() {
-                let out_val = machine.outputs.get(output_idx).unwrap().to_i32().expect("should be 0 or 1");
+                let out_val = machine
+                    .outputs
+                    .get(output_idx)
+                    .unwrap()
+                    .to_i32()
+                    .expect("should be 0 or 1");
 
                 // color output
-                if output_idx % 2 == 0 { // color output
+                if output_idx % 2 == 0 {
+                    // color output
                     self.hull.insert(self.pos.clone(), out_val);
-                } else { // turn output
+                } else {
+                    // turn output
                     self.dir = self.next_dir(out_val);
                     self.pos = self.next_pos();
                 }
@@ -58,7 +65,7 @@ impl Robot {
     }
 
     pub fn paint_panel(&mut self, pos: Point, color: i32) {
-      self.hull.insert(pos, color);
+        self.hull.insert(pos, color);
     }
 
     pub fn panels_count(&self) -> usize {
@@ -108,13 +115,27 @@ impl Robot {
 
         // get the bounds of of the coordinates
         for point in self.hull.keys() {
-            let x = point.0.to_i32().expect("pretty sure coordinates fit in i32 for this one");
-            let y = point.1.to_i32().expect("pretty sure coordinates fit in i32 for this one");
+            let x = point
+                .0
+                .to_i32()
+                .expect("pretty sure coordinates fit in i32 for this one");
+            let y = point
+                .1
+                .to_i32()
+                .expect("pretty sure coordinates fit in i32 for this one");
 
-            if x < min_x { min_x = x }
-            if x > max_x { max_x = x }
-            if y < min_y { min_y = y }
-            if y > max_y { max_y = y }
+            if x < min_x {
+                min_x = x
+            }
+            if x > max_x {
+                max_x = x
+            }
+            if y < min_y {
+                min_y = y
+            }
+            if y > max_y {
+                max_y = y
+            }
         }
 
         let mut hull_str = String::new();
@@ -141,4 +162,3 @@ impl Robot {
         hull_str
     }
 }
-

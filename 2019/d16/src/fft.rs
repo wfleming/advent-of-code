@@ -53,14 +53,13 @@ pub fn expand_10k(s: &Signal) -> Signal {
 }
 
 pub fn p2_offset(s: &Signal) -> usize {
-    s
-    .iter()
-    .take(7)
-    .map(|x| x.to_string())
-    .collect::<Vec<String>>()
-    .join("")
-    .parse::<usize>()
-    .unwrap()
+    s.iter()
+        .take(7)
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>()
+        .join("")
+        .parse::<usize>()
+        .unwrap()
 }
 
 pub fn apply_phase_p2(sig: Signal) -> Signal {
@@ -127,22 +126,40 @@ mod test {
 
     #[test]
     fn aoc_p2_ex_1() {
-        let s: Signal = vec![0,3,0,3,6,7,3,2,5,7,7,2,1,2,9,4,4,0,6,3,4,9,1,5,6,5,4,7,4,6,6,4];
+        let s: Signal = vec![
+            0, 3, 0, 3, 6, 7, 3, 2, 5, 7, 7, 2, 1, 2, 9, 4, 4, 0, 6, 3, 4, 9, 1, 5, 6, 5, 4, 7, 4,
+            6, 6, 4,
+        ];
         let offset = p2_offset(&s);
         let s10k = expand_10k(&s);
         let s10k_p100 = apply_phase_n_p2(s10k, 100);
-        let msg = s10k_p100.iter().skip(offset).take(8).map(|x| x.to_string()).collect::<Vec<String>>().join("");
+        let msg = s10k_p100
+            .iter()
+            .skip(offset)
+            .take(8)
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
+            .join("");
 
         assert_eq!(&msg, "84462026");
     }
 
     #[test]
     fn aoc_p2_ex_2() {
-        let s: Signal = vec![0, 2, 9, 3, 5, 1, 0, 9, 6, 9, 9, 9, 4, 0, 8, 0, 7, 4, 0, 7, 5, 8, 5, 4, 4, 7, 0, 3, 4, 3, 2, 3];
+        let s: Signal = vec![
+            0, 2, 9, 3, 5, 1, 0, 9, 6, 9, 9, 9, 4, 0, 8, 0, 7, 4, 0, 7, 5, 8, 5, 4, 4, 7, 0, 3, 4,
+            3, 2, 3,
+        ];
         let offset = p2_offset(&s);
         let s10k = expand_10k(&s);
         let s10k_p100 = apply_phase_n_p2(s10k, 100);
-        let msg = s10k_p100.iter().skip(offset).take(8).map(|x| x.to_string()).collect::<Vec<String>>().join("");
+        let msg = s10k_p100
+            .iter()
+            .skip(offset)
+            .take(8)
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
+            .join("");
 
         assert_eq!(&msg, "78725270");
     }

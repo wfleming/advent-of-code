@@ -1,7 +1,7 @@
 mod robot;
 
-use std::env::args;
 use intcode::{machine::Machine, tape};
+use std::env::args;
 // use intcode::num_traits::cast::FromPrimitive;
 
 use crate::robot::Robot;

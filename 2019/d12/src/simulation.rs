@@ -1,17 +1,14 @@
 use crate::moon::Moon;
 use std::vec::Vec;
 
-#[derive(Clone)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Simulation {
     moons: Vec<Moon>,
 }
 
 impl Simulation {
     pub fn new(moons: Vec<Moon>) -> Simulation {
-        Simulation {
-            moons: moons,
-        }
+        Simulation { moons: moons }
     }
 
     pub fn step_n(&mut self, steps: u32) {
@@ -66,17 +63,20 @@ impl Simulation {
             moon.pos = (
                 moon.pos.0 + moon.vel.0,
                 moon.pos.1 + moon.vel.1,
-                moon.pos.2 + moon.vel.2
+                moon.pos.2 + moon.vel.2,
             )
         }
     }
 
     pub fn total_energy(&self) -> i32 {
-        self.moons.iter().map(|moon| {
-            let pot = moon.pos.0.abs() + moon.pos.1.abs() + moon.pos.2.abs();
-            let kin = moon.vel.0.abs() + moon.vel.1.abs() + moon.vel.2.abs();
-            pot * kin
-        }).sum()
+        self.moons
+            .iter()
+            .map(|moon| {
+                let pot = moon.pos.0.abs() + moon.pos.1.abs() + moon.pos.2.abs();
+                let kin = moon.vel.0.abs() + moon.vel.1.abs() + moon.vel.2.abs();
+                pot * kin
+            })
+            .sum()
     }
 
     pub fn find_cycles(&mut self) -> u64 {
@@ -114,11 +114,7 @@ impl Simulation {
         }
         // apply velocity
         for mut moon in &mut self.moons {
-            moon.pos = (
-                moon.pos.0 + moon.vel.0,
-                moon.pos.1,
-                moon.pos.2
-            )
+            moon.pos = (moon.pos.0 + moon.vel.0, moon.pos.1, moon.pos.2)
         }
     }
 
@@ -149,11 +145,7 @@ impl Simulation {
         }
         // apply velocity
         for mut moon in &mut self.moons {
-            moon.pos = (
-                moon.pos.0,
-                moon.pos.1 + moon.vel.1,
-                moon.pos.2
-            )
+            moon.pos = (moon.pos.0, moon.pos.1 + moon.vel.1, moon.pos.2)
         }
     }
 
@@ -184,11 +176,7 @@ impl Simulation {
         }
         // apply velocity
         for mut moon in &mut self.moons {
-            moon.pos = (
-                moon.pos.0,
-                moon.pos.1,
-                moon.pos.2 + moon.vel.2,
-            )
+            moon.pos = (moon.pos.0, moon.pos.1, moon.pos.2 + moon.vel.2)
         }
     }
 }
@@ -230,19 +218,43 @@ mod test {
 
     fn example_1_initial_moons() -> Vec<Moon> {
         vec![
-            Moon { pos: (-1, 0, 2), vel: (0, 0, 0) },
-            Moon { pos: (2, -10, -7), vel: (0, 0, 0) },
-            Moon { pos: (4, -8, 8), vel: (0, 0, 0) },
-            Moon { pos: (3, 5, -1), vel: (0, 0, 0) },
+            Moon {
+                pos: (-1, 0, 2),
+                vel: (0, 0, 0),
+            },
+            Moon {
+                pos: (2, -10, -7),
+                vel: (0, 0, 0),
+            },
+            Moon {
+                pos: (4, -8, 8),
+                vel: (0, 0, 0),
+            },
+            Moon {
+                pos: (3, 5, -1),
+                vel: (0, 0, 0),
+            },
         ]
     }
 
     fn example_2_initial_moons() -> Vec<Moon> {
         vec![
-            Moon { pos: (-8, -10, 0), vel: (0, 0, 0) },
-            Moon { pos: (5, 5, 10), vel: (0, 0, 0) },
-            Moon { pos: (2, -7, 3), vel: (0, 0, 0) },
-            Moon { pos: (9, -8, -3), vel: (0, 0, 0) },
+            Moon {
+                pos: (-8, -10, 0),
+                vel: (0, 0, 0),
+            },
+            Moon {
+                pos: (5, 5, 10),
+                vel: (0, 0, 0),
+            },
+            Moon {
+                pos: (2, -7, 3),
+                vel: (0, 0, 0),
+            },
+            Moon {
+                pos: (9, -8, -3),
+                vel: (0, 0, 0),
+            },
         ]
     }
 
@@ -282,6 +294,5 @@ mod test {
 
         let cycles = sim.find_cycles();
         assert_eq!(cycles, 4686774924);
-
     }
 }

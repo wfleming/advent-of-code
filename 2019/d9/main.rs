@@ -1,7 +1,7 @@
-use std::env::args;
-use intcode::{machine::Machine, tape};
+use intcode::num_bigint::BigInt;
 use intcode::num_traits::cast::FromPrimitive;
-use intcode::num_bigint::{BigInt};
+use intcode::{machine::Machine, tape};
+use std::env::args;
 
 fn main() {
     let mut argv = args();
