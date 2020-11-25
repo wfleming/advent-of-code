@@ -22,15 +22,9 @@ pub enum Tile {
 // x increases to right, y increases down
 #[derive(Debug)]
 pub struct View {
-    points: Vec<Vec<Tile>>,
+    pub points: Vec<Vec<Tile>>,
     droid: Point,
     droid_heading: Heading,
-}
-
-impl fmt::Display for View {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "TODO")
-    }
 }
 
 impl View {
