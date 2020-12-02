@@ -1,37 +1,36 @@
 #!/usr/bin/env julia
 
 function load_expenses()
-  map(s -> parse(Int64, s), eachline("input.txt"))
+  map(Base.Fix1(parse, Int64), eachline("input.txt"))
 end
 
-function p1_find_matching_expenses()
-  expenses = load_expenses()
-
+function find_pair(expenses, target)
   for (x,y) in Base.Iterators.product(expenses, expenses)
-    if 2020 == x + y
+    if target == x + y
       return (x, y)
     end
   end
 
-  error("should have found pair summing to 2020")
+  nothing
 end
 
-function p2_find_matching_expenses()
-  expenses = load_expenses()
-
-  for (x,y,z) in Base.Iterators.product(expenses, expenses, expenses)
-    if 2020 == x + y + z
-      return (x, y, z)
+function find_triple(expenses, target)
+  for x in expenses
+    p = find_pair(expenses, target - x)
+    if p != nothing
+      return (x, p[1], p[2])
     end
   end
 
-  error("should have found triple summing to 2020")
+  nothing
 end
 
+expenses = load_expenses()
+
 # p1
-ns = p1_find_matching_expenses()
-println("p1: found $ns, the product is $(ns[1] * ns[2])")
+ns = find_pair(expenses, 2020)
+println("p1: found $ns, the product is $(prod(ns))")
 
 # p2
-ns = p2_find_matching_expenses()
-println("p2: found $ns, the product is $(ns[1] * ns[2] * ns[3])")
+ns = find_triple(expenses, 2020)
+println("p2: found $ns, the product is $(prod(ns))")
