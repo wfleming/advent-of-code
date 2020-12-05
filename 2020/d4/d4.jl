@@ -60,62 +60,62 @@ function is_passport_valid_p2(fields, passport):: Bool
   end
 
   # now we know the fields are present, we can check the vals
-  byr = parse(Int64, passport["byr"])
-  if !(byr >= 1920 && byr <= 2002)
-    return false
-  end
+  validations = Dict(
+    "byr" => byr -> begin
+      byr = parse(Int64, byr)
+      byr >= 1920 && byr <= 2002
+    end,
+    "iyr" => iyr -> begin
+      iyr = parse(Int64, iyr)
+      iyr >= 2010 && iyr <= 2020
+    end,
+    "eyr" => eyr -> begin
+      eyr = parse(Int64, eyr)
+      eyr >= 2020 && eyr <= 2030
+    end,
+    "hgt" => hgt -> begin
+      hgt_parts = match(r"(\d+)(cm|in)", hgt)
+      if nothing == hgt_parts
+        return false
+      end
+      hgt_n = parse(Int64, hgt_parts[1])
+      if hgt_parts[2] == "cm"
+        if !(hgt_n >= 150 && hgt_n <= 193)
+          return false
+        end
+      elseif hgt_parts[2] == "in"
+        if !(hgt_n >= 59 && hgt_n <= 76)
+          return false
+        end
+      else
+        return false
+      end
 
-  iyr = parse(Int64, passport["iyr"])
-  if !(iyr >= 2010 && iyr <= 2020)
-    return false
-  end
+      true
+    end,
+    "hcl" => hcl -> nothing != match(HAIR_PAT, hcl),
+    "ecl" => ecl -> ecl in EYE_COLORS,
+    "pid" => pid -> nothing != match(PID_PAT, pid),
+  )
 
-  eyr = parse(Int64, passport["eyr"])
-  if !(eyr >= 2020 && eyr <= 2030)
-    return false
-  end
-
-  hgt_parts = match(r"(\d+)(cm|in)", passport["hgt"])
-  if nothing == hgt_parts
-    return false
-  end
-  hgt_n = parse(Int64, hgt_parts[1])
-  if hgt_parts[2] == "cm"
-    if !(hgt_n >= 150 && hgt_n <= 193)
-      return false
-    end
-  elseif hgt_parts[2] == "in"
-    if !(hgt_n >= 59 && hgt_n <= 76)
-      return false
-    end
-  else
-    return false
-  end
-
-  if nothing == match(HAIR_PAT, passport["hcl"])
-    return false
-  end
-
-  if !(passport["ecl"] in EYE_COLORS)
-    return false
-  end
-
-  if nothing == match(PID_PAT, passport["pid"])
-    return false
-  end
-
-  true
+  all(
+    attr -> validations[attr](passport[attr]),
+    keys(validations)
+  )
 end
 
 # run the logic
 
-# p1
-
 input_str = read(open(ARGS[1]), String)
 passports = parse_passports(input_str)
+
+# p1
+
 fields_except_cnt = filter(f -> f != "cid", REQUIRED_FIELDS)
 valid_count = count(p -> is_passport_valid(fields_except_cnt, p), passports)
 println("p1: $(valid_count) of $(length(passports)) passports are valid (sans `cid`)")
+
+# p2
 
 valid_count_p2 = count(p -> is_passport_valid_p2(fields_except_cnt, p), passports)
 println("p2: $(valid_count_p2) of $(length(passports)) passports are valid (sans `cid`)")
