@@ -12,25 +12,16 @@ function parse_group(group)
   map(Base.Fix2(split, ""), split(group, "\n"))
 end
 
-function group_questions_answered_union(group)
-  foldl(union, parse_group(group))
+function build_sum_qs(score_fn)
+  function (groups)
+    map(group -> foldl(score_fn, parse_group(group)), groups) |>
+      Base.Fix1(map, length) |>
+      sum
+  end
 end
 
-function p1_sum_qs(groups)
-  map(group_questions_answered_union, groups) |>
-    Base.Fix1(map, length) |>
-    sum
-end
-
-function group_questions_answered_intersect(group)
-  foldl(intersect, parse_group(group))
-end
-
-function p2_sum_qs(groups)
-  map(group_questions_answered_intersect, groups) |>
-    Base.Fix1(map, length) |>
-    sum
-end
+p1_sum_qs = build_sum_qs(union)
+p2_sum_qs = build_sum_qs(intersect)
 
 groups = load_groups()
 println("p1: sum is $(p1_sum_qs(groups))")
