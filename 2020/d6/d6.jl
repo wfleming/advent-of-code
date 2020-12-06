@@ -7,14 +7,13 @@ function load_groups()
     Base.Fix1(filter, x -> length(x) > 0)
 end
 
+# turn string into an array of arrays of characters
+function parse_group(group)
+  map(Base.Fix2(split, ""), split(group, "\n"))
+end
+
 function group_questions_answered_union(group)
-  qs = Set()
-
-  for m in eachmatch(r"[a-z]", group)
-    push!(qs, m.match)
-  end
-
-  qs
+  foldl(union, parse_group(group))
 end
 
 function p1_sum_qs(groups)
@@ -24,10 +23,7 @@ function p1_sum_qs(groups)
 end
 
 function group_questions_answered_intersect(group)
-  # an array of arrays of characters
-  individuals = map(Base.Fix2(split, ""), split(group, "\n"))
-
-  foldl(intersect, individuals)
+  foldl(intersect, parse_group(group))
 end
 
 function p2_sum_qs(groups)
