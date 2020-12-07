@@ -10,8 +10,7 @@ end
 function build_sum_qs(score_fn)
   function (groups)
     map(group -> foldl(score_fn, split(group, "\n")), groups) |>
-      Base.Fix1(map, length) |>
-      sum
+      Base.Fix1(sum, length)
   end
 end
 
