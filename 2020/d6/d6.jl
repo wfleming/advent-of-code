@@ -7,14 +7,9 @@ function load_groups()
     Base.Fix1(filter, x -> length(x) > 0)
 end
 
-# turn string into an array of arrays of characters
-function parse_group(group)
-  map(Base.Fix2(split, ""), split(group, "\n"))
-end
-
 function build_sum_qs(score_fn)
   function (groups)
-    map(group -> foldl(score_fn, parse_group(group)), groups) |>
+    map(group -> foldl(score_fn, split(group, "\n")), groups) |>
       Base.Fix1(map, length) |>
       sum
   end
