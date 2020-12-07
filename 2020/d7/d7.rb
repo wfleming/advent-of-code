@@ -88,5 +88,5 @@ puts "p1: #{p1_rules.count} rules can contain #{target}"
 
 # p2
 p2_bags = regs.bags_inside(target)
-p2_total = p2_bags.map(&:count).sum
+p2_total = p2_bags.sum(&:count)
 puts "p2: #{p2_total} bags go inside a #{target}"
