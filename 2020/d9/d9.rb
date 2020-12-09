@@ -33,8 +33,30 @@ class Xmas
 
     nums[i]
   end
+
+  def sum_range_from(idx, target)
+    s = 0
+    nums[idx..].take_while do |n|
+      s += n
+      s <= target
+    end
+  end
+
+  def find_contiguous_sum(target)
+    nums.each_index.each do |i|
+      r = sum_range_from(i, target)
+
+      return r if r.sum == target
+    end
+  end
 end
 
 # p1
 xmas = Xmas.new(nums: INPUT, preamble: PREAMBLE)
-puts "p1: first invalid entry is #{xmas.find_invalid}"
+p2_target = xmas.find_invalid
+puts "p1: first invalid entry is #{p2_target}"
+
+# p2
+range = xmas.find_contiguous_sum(p2_target)
+puts "p2: entire range is #{range}"
+puts "p2: smallest=#{range.min} largest=#{range.max} answer=#{range.min + range.max}"
