@@ -28,7 +28,7 @@ class Game
     ages[n] << turn
     ages[n] = ages[n][-2..] if ages[n].count > 2
     @last_said = n
-    # puts "on turn #{turn}, #{n} was spoken"
+    # puts "DEBUG on turn #{turn}, #{n} was spoken"
   end
 
   def play_turns!(turn_count)
@@ -40,3 +40,8 @@ end
 g = Game.new(SEED)
 g.play_turns!(2020)
 puts "p1: after 2020 turns, last number spoken was #{g.last_said}"
+
+# p2
+g = Game.new(SEED)
+g.play_turns!(30_000_000)
+puts "p2: after 30M turns, last number spoken was #{g.last_said}"
