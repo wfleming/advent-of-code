@@ -3,36 +3,32 @@
 SEED = File.read(ARGV[0]).split(",").map(&method(:Integer))
 
 class Game
-  attr_reader :seed, :ages, :turn, :last_said
+  attr_reader :ages, :last_turn, :last_said, :say_next
 
   def initialize(seed)
-    @seed = seed
-    @ages = {} # number spoken => last 2 turns it was spoken
-    @last_said = nil
-    @turn = 0
+    # number spoken => last turn it was spoken
+    @ages = Hash[
+      seed.each_with_index.map { |n, idx|
+        [n, idx + 1]
+      }
+    ]
+    @last_said = seed[-1]
+    @say_next = 0 # no repeats in seed
+    @last_turn = seed.count
   end
 
   def play_turn!
-    n =
-      if turn >= seed.count
-        if ages[last_said].count == 1
-          0
-        else
-          ages[last_said][1] - ages[last_said][0]
-        end
-      else # still in the early seed ns
-        seed[turn]
-      end
-    @turn += 1
-    ages[n] ||= []
-    ages[n] << turn
-    ages[n] = ages[n][-2..] if ages[n].count > 2
-    @last_said = n
-    # puts "DEBUG on turn #{turn}, #{n} was spoken"
+    # puts "DEBUG current_turn=#{last_turn + 1}, last_said=#{last_said} say_this_turn=#{say_next} ages=#{ages}"
+    @last_said = say_next
+    @last_turn += 1
+    @say_next = last_turn - ages.fetch(say_next, last_turn)
+    ages[last_said] = last_turn
   end
 
   def play_turns!(turn_count)
-    turn_count.times { play_turn! }
+    until last_turn == turn_count
+      play_turn!
+    end
   end
 end
 
