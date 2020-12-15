@@ -47,6 +47,5 @@ g = go_to_turn(g, 2020)
 println("p1: after $(g.last_turn) turns, last said was $(g.last_said)")
 
 # p2
-g = seed_game(load_seed())
 g = go_to_turn(g, 30_000_000)
-println("p1: after $(g.last_turn) turns, last said was $(g.last_said)")
+println("p2: after $(g.last_turn) turns, last said was $(g.last_said)")
