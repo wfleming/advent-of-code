@@ -39,6 +39,43 @@ Input = Struct.new(:constraints, :my_ticket, :other_tickets) do
       ticket.find { |x| constraints.values.flatten.none? { |r| r === x } }
     }.reject(&:nil?).sum
   end
+
+  def invalid?(ticket)
+    ticket.any? { |x| constraints.values.flatten.none? { |r| r === x } }
+  end
+
+  def valid_tickets
+    @valid_tickets ||= other_tickets.reject(&method(:invalid?))
+  end
+
+  # return [string] (first entry is the name of the first field on each ticket)
+  def mapped_fields
+    field_names = [nil] * other_tickets[0].count
+
+    while field_names.any?(&:nil?)
+      i = field_names.each_index.find { |idx|
+        field_names[idx].nil? && identify_field(idx, field_names.compact).count == 1
+      }
+      field_names[i] = identify_field(i, field_names.compact).first
+    end
+
+    field_names
+  end
+
+  # returns the name
+  def identify_field(idx, exclude_names = [])
+    vals = valid_tickets.map { |t| t[idx] }
+    constraints.select { |name, ranges|
+      !exclude_names.include?(name) && vals.all? { |v| ranges.any? { |r| r === v } }
+    }.keys
+  end
+
+  def my_departure_fields
+    field_names = mapped_fields
+    my_ticket.each_with_index.map { |val, idx|
+      val if field_names[idx] =~ /^departure/
+    }.compact
+  end
 end
 
 input = Input.parse(File.read(ARGV[0]))
@@ -46,3 +83,5 @@ input = Input.parse(File.read(ARGV[0]))
 
 puts "p1: ticket scanning error rate = #{input.scanning_error_rate}"
 
+my_departure_fields = input.my_departure_fields
+puts "p2: my fields = #{my_departure_fields}, product = #{my_departure_fields.reduce(&:*)}"
