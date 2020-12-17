@@ -2,27 +2,39 @@
 
 require "set"
 
-Point = Struct.new(:x, :y, :z) do
+Point = Struct.new(:vals) do
+  def zero?
+    vals.all?(&:zero?)
+  end
+
   def +(other)
-    Point.new(x + other.x, y + other.y, z + other.z)
+    raise "mismatch" unless vals.count == other.vals.count
+
+    Point.new(
+      vals.each_with_index.map { |v, i| v + other.vals[i] }
+    )
   end
 end
 
 class Cubes
-  def self.parse(str)
+  def self.parse(str, dimensions:)
     seed_active = str.lines.each_with_index.flat_map { |line, y|
       line.each_char.each_with_index.map { |c, x|
-        Point.new(x, y, 0) if c == "#"
+        if c == "#"
+          v = [x, y] + ([0] * (dimensions - 2))
+          Point.new(v)
+        end
       }
     }.compact
 
-    new(seed_active)
+    new(seed_active, dimensions)
   end
 
-  attr_reader :active
+  attr_reader :active, :dimensions
 
-  def initialize(active)
+  def initialize(active, dimensions)
     @active = Set.new(active)
+    @dimensions = dimensions
   end
 
   def run_cycle
@@ -69,8 +81,8 @@ class Cubes
   private
 
   def neighbor_vectors(memo = [[-1], [0], [1]])
-    if memo[0].length == 3
-      return memo.reject { |p| p == [0, 0, 0] }.map { |p| Point.new(*p) }
+    if memo[0].length == dimensions
+      return memo.map { |p| Point.new(p) }.reject(&:zero?)
     end
 
     neighbor_vectors(
@@ -86,6 +98,11 @@ class Cubes
 end
 
 # p1
-cubes = Cubes.parse(File.read(ARGV[0]))
+cubes = Cubes.parse(File.read(ARGV[0]), dimensions: 3)
 cubes.run_cycles(6)
 puts "p1: after 6 cycles, #{cubes.active.count} cubes are active"
+
+# p2
+cubes = Cubes.parse(File.read(ARGV[0]), dimensions: 4)
+cubes.run_cycles(6)
+puts "p2: after 6 cycles, #{cubes.active.count} cubes are active"
