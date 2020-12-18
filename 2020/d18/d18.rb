@@ -48,6 +48,26 @@ module Calculator
     end
   end
 
+  # for p2, walk the expression & group more for + to make them higher priority
+  def self.infer_parens(expr)
+    case expr
+    when Numeric, Symbol
+      expr
+    when Array
+      new_expr = [infer_parens(expr.shift)]
+      while (t = expr.shift)
+        if t == :+
+          new_expr[-1] = [new_expr[-1], t, infer_parens(expr.shift)]
+        else
+          new_expr << infer_parens(t)
+        end
+      end
+      new_expr
+    else
+      raise "shouldn't be inferring parens on #{expr}"
+    end
+  end
+
   def self.calc_op(lhs, op, rhs)
     case op
     when :+
@@ -68,3 +88,9 @@ end
 exprs = File.readlines(ARGV[0]).map { |l| Calculator.lex(Calculator.tokenize(l)) }
 vals = exprs.map { |e| Calculator.evaluate(e) }
 puts "p1: sum of all evaluated expressions is #{vals.sum}"
+
+# p2
+exprs = File.readlines(ARGV[0]).map { |l| Calculator.lex(Calculator.tokenize(l)) }
+exprs2 = exprs.map { |e| Calculator.infer_parens(e) }
+vals2 = exprs2.map { |e| Calculator.evaluate(e) }
+puts "p2: sum of all evaluated expressions is #{vals2.sum}"
