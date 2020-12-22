@@ -91,10 +91,19 @@ class Game2 < Game
     c2, deck2 = p2[0], p2[1..]
 
     if deck1.count >= c1 && deck2.count >= c2 # recursive combat
-      recursive_game = self.class.new(
-        p1: deck1.take(c1),
-        p2: deck2.take(c2),
-      ).play_full_game
+      # performance improvement - if p1 has the highest card for the sub-game
+      # and it's high enough they can't lose it in another recursive game,
+      # you can guarantee they'll always win the recursive game
+      recursive_game =
+        if deck1.take(c1).max > deck2.take(c2).max && deck1.take(c1).max >= (deck1.count + deck2.count)
+          # this is just a stub game where p1 wins
+          self.class.new(p1: [42], p2: [])
+        else # otherwise simulate the whole game
+          self.class.new(
+             p1: deck1.take(c1),
+             p2: deck2.take(c2),
+          ).play_full_game
+        end
 
       if recursive_game.winning_player == :p1
         self.class.new(p1: deck1 + [c1, c2], p2: deck2)
