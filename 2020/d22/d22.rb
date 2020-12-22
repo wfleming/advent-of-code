@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+require "set"
+
 class Game
   attr_reader :p1, :p2
 
@@ -24,11 +26,29 @@ class Game
     @p2 = p2
   end
 
+  def eql?(other)
+    p1 == other.p1 && p2 == other.p2
+  end
+  alias_method :==, :eql?
+  alias_method :equal?, :eql?
+
+  def hash
+    { p1: p1, p2: p2 }.hash
+  end
+
   def game_over?
     !winning_player.nil?
   end
 
   def winning_player
+    if p1.empty?
+      :p2
+    elsif p2.empty?
+      :p1
+    end
+  end
+
+  def winning_deck
     if p1.empty?
       p2
     elsif p2.empty?
@@ -51,16 +71,73 @@ class Game
     elsif c2 > c1
       p2 << c2 << c1
     else
-      raise "we weren't told how to handle ties!"
+      raise "ties aren't possible - cards are unique"
     end
   end
 
   def play_full_game
     play_round until game_over?
+    self
+  end
+end
+
+class Game2 < Game
+  def initialize(p1:, p2:)
+    super(p1: p1, p2: p2)
+  end
+
+  def play_round
+    c1, deck1 = p1[0], p1[1..]
+    c2, deck2 = p2[0], p2[1..]
+
+    if deck1.count >= c1 && deck2.count >= c2 # recursive combat
+      recursive_game = self.class.new(
+        p1: deck1.take(c1),
+        p2: deck2.take(c2),
+      ).play_full_game
+
+      if recursive_game.winning_player == :p1
+        self.class.new(p1: deck1 + [c1, c2], p2: deck2)
+      elsif recursive_game.winning_player == :p2
+        self.class.new(p1: deck1, p2: deck2 + [c2, c1])
+      else
+        raise "something's fucky"
+      end
+    else # normal scoring applies
+      if c1 > c2
+        self.class.new(p1: deck1 + [c1, c2], p2: deck2)
+      elsif c2 > c1
+        self.class.new(p1: deck1, p2: deck2 + [c2, c1])
+      else
+        raise "ties are not possible - each card value is unique"
+      end
+    end
+  end
+
+  # returns the won Game
+  def play_full_game
+    seen_states = Set.new
+    cur_state = self
+
+    until seen_states.include?(cur_state) || cur_state.game_over?
+      seen_states << cur_state
+      cur_state = cur_state.play_round
+    end
+
+    if seen_states.include?(cur_state) # recursion base case, force p1 to win
+      cur_state.p2.clear
+    end
+
+    cur_state
   end
 end
 
 game = Game.parse(File.read(ARGV[0]))
 game.play_full_game
-s = game.score(game.winning_player)
-puts "p1: score is #{s}"
+s = game.score(game.winning_deck)
+puts "p1: winner is #{game.winning_player} with score #{s}"
+
+game = Game2.parse(File.read(ARGV[0]))
+g2 = game.play_full_game
+s = game.score(g2.winning_deck)
+puts "p2: #{g2.winning_player} won with score #{s}"
