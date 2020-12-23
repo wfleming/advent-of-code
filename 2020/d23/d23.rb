@@ -61,21 +61,22 @@ class Node
       end
     end
   end
-
-  def maximum_val
-    each.map(&:val).max
-  end
-
-  def minimum_val
-    each.map(&:val).min
-  end
 end
 
 class Game
   attr_accessor :current_cup
+  attr_reader :cup_index, :cups_min, :cups_max
 
   def initialize(current_cup)
     @current_cup = current_cup
+    @cup_index = []
+    @cups_min = current_cup.val
+    @cups_max = current_cup.val
+    current_cup.each do |cup|
+      cup_index[cup.val] = cup
+      @cups_min = cup.val if cup.val < cups_min
+      @cups_max = cup.val if cup.val > cups_max
+    end
   end
 
   def move!
@@ -86,13 +87,13 @@ class Game
 
     destination_cup = nil
     destination_val = current_cup.val - 1
-
     while destination_cup.nil?
-      destination_cup = current_cup.find { |node| node.val == destination_val }
-      if destination_cup.nil?
-        destination_val -= 1
-        destination_val = current_cup.maximum_val if destination_val < current_cup.minimum_val
+      if !move_cups.map(&:val).include?(destination_val)
+        destination_cup = cup_index[destination_val]
       end
+
+      destination_val -= 1
+      destination_val = cups_max if destination_val < cups_min
     end
 
     # place the cups
@@ -104,10 +105,7 @@ class Game
   end
 
   def move_n!(n)
-    n.times { |i|
-      puts "i=#{i}" if i % 100_000 == 0
-      self.move!
-    }
+    n.times { self.move! }
   end
 end
 
@@ -127,6 +125,6 @@ p2_numbers = numbers + (LIST_SIZE - numbers.count).times.map { |n| n + 1 + ns_ma
 list = Node.construct(p2_numbers)
 game = Game.new(list)
 game.move_n!(10_000_000)
-cup_1 = game.current_cup.find { |n| n.val == 1 }
+cup_1 = game.cup_index[1]
 star_cups = [cup_1.tail.val, cup_1.tail.tail.val]
 puts "p2: stars are under #{star_cups}, product is #{star_cups.reduce(&:*)}"
