@@ -9,19 +9,34 @@ class Node
   attr_reader :val
   attr_accessor :tail
 
-  def self.construct(vals, first_head: nil)
-    if vals.count == 1
-      new(val: vals[0], tail: first_head)
-    else
-      head = new(val: vals[0], tail: nil)
-      head.tail = construct(vals[1..], first_head: first_head || head)
-      head
+  def self.construct(vals)
+    vals = vals.clone
+    head = nil
+
+    while vals.any?
+      head = new(val: vals.pop, tail: head)
     end
+
+    # close the loop
+    last_node = head.find { |n| n.tail.nil? }
+    last_node.tail = head
+
+    head
   end
 
   def initialize(val:, tail:)
     @val = val
     @tail = tail
+  end
+
+  def inspect
+    last_tail = find { |n| n.tail.nil? || n.tail == self }
+    str = each.map(&:val).join(",")
+    if last_tail.nil?
+      "#{str},NIL"
+    else
+      "#{str},LOOP"
+    end
   end
 
   def to_s
@@ -89,16 +104,29 @@ class Game
   end
 
   def move_n!(n)
-    n.times { self.move!  }
+    n.times { |i|
+      puts "i=#{i}" if i % 100_000 == 0
+      self.move!
+    }
   end
 end
 
 numbers = ARGV[0].each_char.map(&method(:Integer))
 
 list = Node.construct(numbers)
-puts "the list is constructed: #{list.to_s}"
+puts "p1: the list is constructed: #{list.inspect}"
 game = Game.new(list)
 game.move_n!(100)
 cup_1 = game.current_cup.find { |n| n.val == 1 }
 puts "p1: after 100 moves, the list after 1 is #{cup_1.to_s[1..]}"
 
+# construct the p2 numbers
+LIST_SIZE = 1_000_000
+ns_max = numbers.max
+p2_numbers = numbers + (LIST_SIZE - numbers.count).times.map { |n| n + 1 + ns_max }
+list = Node.construct(p2_numbers)
+game = Game.new(list)
+game.move_n!(10_000_000)
+cup_1 = game.current_cup.find { |n| n.val == 1 }
+star_cups = [cup_1.tail.val, cup_1.tail.tail.val]
+puts "p2: stars are under #{star_cups}, product is #{star_cups.reduce(&:*)}"
