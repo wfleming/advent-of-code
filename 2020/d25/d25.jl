@@ -13,7 +13,8 @@ end
 function transform(subject, loops)
   val = subject
 
-  # again, not sure why this is off-by-1 and needs to loop *fewer* times
+  # the first loop/stretch is really just "setting the value to the subject",
+  # hence the subtraction
   for _ in 1:(loops - 1)
     val = transform_once(subject, val)
   end
@@ -25,7 +26,7 @@ INITIAL_SUBJECT = 7
 
 function find_loop_sizes(pub_key)
   loop_count = 1
-  val = transform_once(INITIAL_SUBJECT, INITIAL_SUBJECT)
+  val = INITIAL_SUBJECT
 
   while val != pub_key
     loop_count += 1
@@ -36,8 +37,7 @@ function find_loop_sizes(pub_key)
     end
   end
 
-  # I confess I don't understand why this was off-by-1
-  loop_count + 1
+  loop_count
 end
 
 pub_keys = read_pub_keys()
