@@ -10,11 +10,11 @@ import std/locks
 
 
 type AsyncMiner = ref object
-  key: string # the private key from input
-  prefix: string  # target prefix of md5
-  lock: Lock # used for synchronizing threads
-  memo: int # the largest number tried.
-  answer: int # the smallest num found matching
+  key: string    # the private key from input
+  prefix: string # target prefix of md5
+  lock: Lock     # used for synchronizing threads
+  memo: int      # the largest number tried.
+  answer: int    # the smallest num found matching
 
 const BLOCK_SIZE = 10_000
 

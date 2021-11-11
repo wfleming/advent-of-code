@@ -51,7 +51,8 @@ proc main(): void =
 
   runInstructions(state, instructions)
 
-  let p1_pos = toSeq(state.visitedCounts.keys).filter(proc(k: Pos): bool = return state.visitedCounts[k] > 1)
+  let p1_pos = toSeq(state.visitedCounts.keys).filter(proc(
+      k: Pos): bool = return state.visitedCounts[k] > 1)
 
   echo "p1: houses visited at least once: ", state.visitedCounts.len()
 
