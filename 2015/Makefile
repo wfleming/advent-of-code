@@ -7,3 +7,4 @@ all:
 	(cd d05 && nim compile --out=d05.bin --run d05.nim input.txt)
 	(cd d06 && ./d06.py input.txt)
 	(cd d07 && ./d07.py input.txt)
+	(cd d08 && ./d08.rb input.txt)
