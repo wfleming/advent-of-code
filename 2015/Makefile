@@ -8,3 +8,4 @@ all:
 	(cd d06 && ./d06.py input.txt)
 	(cd d07 && ./d07.py input.txt)
 	(cd d08 && ./d08.rb input.txt)
+	(cd d09 && ./d09.rb input.txt)
