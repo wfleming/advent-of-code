@@ -9,3 +9,4 @@ all:
 	(cd d07 && ./d07.py input.txt)
 	(cd d08 && ./d08.rb input.txt)
 	(cd d09 && ./d09.rb input.txt)
+	(cd d10 && ./d10.rb 3113322113)
