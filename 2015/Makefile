@@ -13,3 +13,4 @@ all:
 	(cd d11 && ./d11.rb hepxcrrq)
 	(cd d12 && ./d12.rb input.txt)
 	(cd d13 && ./d13.rb input.txt)
+	(cd d14 && ./d14.rb input.txt)
