@@ -16,3 +16,4 @@ all:
 	(cd d14 && ./d14.rb input.txt)
 	(cd d15 && ./d15.rb input.txt)
 	(cd d16 && ./d16.rb input.txt)
+	(cd d17 && ./d17.rb input.txt)
