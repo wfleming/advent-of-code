@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require "set"
+require_relative "../lib/pqueue"
 
 def parse_input
   lines = File.readlines(ARGV[0])
@@ -51,67 +51,6 @@ def levenshtein_distance(s, t)
   v0[t.length]
 end
 
-# https://www.brianstorti.com/implementing-a-priority-queue-in-ruby/
-class PQueue
-  def initialize()
-    # each element is [actual_element, priority], root remains nil
-    @storage = [nil]
-    @includes = Set.new
-  end
-
-  def any?
-    count > 0
-  end
-
-  def count
-    # don't count nil root
-    @storage.count - 1
-  end
-
-  def include?(x)
-    @includes.include?(x)
-  end
-
-  # only returns the element, not the stored priority
-  def shift
-    swap(1, @storage.size - 1)
-    head = @storage.pop # head/highest priority is now at end of storage
-    bubble_down(1) # make sure the tree is ordered again
-    @includes.delete(head[0])
-    head[0]
-  end
-
-  def push(el, priority)
-    @storage << [el, priority]
-    @includes << el
-    bubble_up(@storage.count - 1)
-  end
-
-  def bubble_up(idx)
-    parent_idx = idx / 2
-    return if parent_idx < 1
-    return if @storage[parent_idx][1] <= @storage[idx][1]
-    swap(idx, parent_idx)
-    bubble_up(parent_idx)
-  end
-
-  def bubble_down(idx)
-    child_index = idx * 2
-    return if child_index > @storage.count - 1
-    not_last_el = child_index < @storage.count - 1
-    left_child = @storage[child_index]
-    right_child = @storage[child_index + 1]
-    child_index += 1 if not_last_el && right_child[1] < left_child[1]
-    return if @storage[idx][1] <= @storage[child_index][1]
-    swap(idx, child_index)
-    bubble_down(child_index)
-  end
-
-  def swap(idx1, idx2)
-    @storage[idx1], @storage[idx2] = @storage[idx2], @storage[idx1]
-  end
-end
-
 # https://en.wikipedia.org/wiki/A*_search_algorithm
 def astar_search(start, goal, transforms)
   open_set = PQueue.new()
@@ -146,6 +85,9 @@ def astar_search(start, goal, transforms)
         came_from[next_molecule] = n
         g_scores[next_molecule] = g_score
         f_scores[next_molecule] = g_score + levenshtein_distance(next_molecule, goal)
+        # Just realized this may be a bug I got lucky with? Shouldn't A* update
+        # the priority in the queue if it's changed even if the pqueue already
+        # has the item?
         open_set.push(next_molecule, f_scores[next_molecule]) unless open_set.include?(next_molecule)
       end
     end

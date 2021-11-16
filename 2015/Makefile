@@ -21,3 +21,4 @@ all:
 	(cd d19 && ./d19.rb input.txt)
 	(cd d20 && ./d20.rb 36000000)
 	(cd d21 && ./d21.rb input.txt)
+	(cd d22 && ./d22.rb)
