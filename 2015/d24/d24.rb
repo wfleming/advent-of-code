@@ -2,27 +2,35 @@
 
 require "set"
 
-def valid_groups(packages, group_count, group_weight = nil, memo = nil)
-  if memo.nil?
-    group_weight = packages.sum / group_count
-    packages.each_with_index.flat_map do |p, idx|
-      remaining_packages = packages[idx+1..].select { |p2| p2 + p <= group_weight }
-      valid_groups(remaining_packages, group_count, group_weight, [p].to_set)
+class SmallestGroupFinder
+  attr_reader :groups
+
+  def initialize(packages, group_count)
+    @packages = packages.sort.reverse
+    @groups = []
+    @group_count = group_count
+    @group_weight = @packages.sum / group_count
+  end
+
+  def populate!
+    @packages.each_with_index do |p, idx|
+      remaining_packages = @packages[idx+1..].select { |p2| p2 + p <= @group_weight }
+      recurse([p].to_set, remaining_packages)
     end
-  else
-    # pairs of [group, remaining_packages]
-    next_group_pairs = packages.each_with_index.map do |p, idx|
-      remaining_packages = packages[idx+1..].select { |p2| memo.sum + p + p2 <= group_weight }
-      [memo + [p], remaining_packages]
-    end
+  end
+
+  def recurse(group, remaining_packages)
     # since we really only need the smallest valid groups, and each recursion
     # makes longer groups, we can short-circuit and stop recursing as soon as we
     # find some valid groups
-    if next_group_pairs.any? { |p| p[0].sum == group_weight }
-      return next_group_pairs.map { |p| p[0] }.select { |g| g.sum == group_weight }
+    if @groups.any? && group.count > @groups[0].count
+      return
+    elsif group.sum == @group_weight && (@groups.empty? || group.count == @groups[0].count)
+      @groups << group
     else
-      next_group_pairs.flat_map do |p|
-        valid_groups(p[1], group_count, group_weight, p[0])
+      remaining_packages.each_with_index.map do |p, idx|
+        next_remaining_packages = remaining_packages[idx+1..].select { |p2| group.sum + p + p2 <= @group_weight }
+        recurse(group + [p], next_remaining_packages)
       end
     end
   end
@@ -33,15 +41,13 @@ def quantum_entanglement(packages)
 end
 
 if __FILE__ == $0
-  # input is already sorted - we reverse it since picking bigger items first
-  # will make smaller groups
-  packages = File.readlines(ARGV[0]).map(&method(:Integer)).sort.reverse
-  p1_groups = valid_groups(packages, 3)
+  packages = File.readlines(ARGV[0]).map(&method(:Integer))
+  p1_groups = SmallestGroupFinder.new(packages, 3).tap(&:populate!).groups
   smallest_group_size = p1_groups.map(&:count).min
   best_front_group = p1_groups.select { |g| g.count == smallest_group_size }.sort_by(&method(:quantum_entanglement))[0]
   puts "p1: quantum entanglement of first group in ideal config: #{quantum_entanglement(best_front_group)}"
 
-  p2_groups = valid_groups(packages, 4)
+  p2_groups = SmallestGroupFinder.new(packages, 4).tap(&:populate!).groups
   smallest_group_size = p2_groups.map(&:count).min
   best_front_group = p2_groups.select { |g| g.count == smallest_group_size }.sort_by(&method(:quantum_entanglement))[0]
   puts "p2: quantum entanglement of first group in ideal config: #{quantum_entanglement(best_front_group)}"
