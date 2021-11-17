@@ -6,10 +6,6 @@ EGGNOG_LITERS = 150
 
 # Wrapping the container makes it easy to support multiples of the same capacity
 Container = Struct.new(:id, :capacity) do
-  def hsh
-    id
-  end
-
   def ==(other)
     id == other.id
   end

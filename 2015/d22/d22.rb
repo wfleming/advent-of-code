@@ -35,10 +35,6 @@ class Game
     {player: player.to_h, boss: boss.to_h, effects: effects, next_turn: next_turn, mana_spent: mana_spent}
   end
 
-  def hsh
-    to_h.hsh
-  end
-
   def clone
     super.tap do |c|
       c.player = player.clone
