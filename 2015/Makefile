@@ -24,3 +24,4 @@ all:
 	(cd d22 && ./d22.rb)
 	(cd d23 && ./d23.rb input.txt)
 	(cd d24 && ./d24.rb input.txt)
+	(cd d25 && ./d25.rb)
