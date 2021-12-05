@@ -4,3 +4,4 @@ all:
 	(cd d02 && ./d02.rb input.txt)
 	(cd d03 && ./d03.rb input.txt)
 	(cd d04 && ./d04.rb input.txt)
+	(cd d05 && ./d05.rb input.txt)
