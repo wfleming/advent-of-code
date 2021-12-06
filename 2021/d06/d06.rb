@@ -18,30 +18,17 @@ def count_cache
   Hash.new do |hsh, key|
     fish, days = *key
 
-    count = 1
-
-    while days > 0
-      if fish > 6
-        fish -= 2
-        days -= 2
-      end
-
-      if days >= 7 # every 7 days, fish will have looped and produced offspring at parent + 2
-        days -= 7
-        count += hsh[[fish + 2, days]]
-      else # once less than 7 days left, step singly
-        days -= 1
-        fish -= 1
-        if fish < 0
-          count += hsh[[8, days]]
-          # we can just break and skip the last few loops, the fish won't spawn
-          # again
-          break
-        end
-      end
+    if days <= 0
+      hsh[key] = 1
+    elsif fish == 0
+      hsh[key] = 1 + hsh[[8, days]]
+    elsif fish > 6
+      hsh[key] = hsh[[fish - 2, days - 2]]
+    elsif days >= 7
+      hsh[key] = hsh[[fish, days - 7]] + hsh[[fish + 2, days - 7]]
+    else # days < 7
+      hsh[key] = hsh[[fish - 1, days - 1]]
     end
-
-    hsh[key] = count
   end
 end
 
@@ -56,6 +43,6 @@ init_fish = File.read(ARGV[0]).split(",").map(&method(:Integer))
 
 fish = 80.times.reduce(init_fish) { |fish, _i| step_1(fish) }
 puts "p1: after 80 days, there are #{fish.count} fish"
-puts "p1 (p2 imp): after 80 days, there are #{count_fish(init_fish, 80)} fish"
+puts "p1 (p2 impl): after 80 days, there are #{count_fish(init_fish, 80)} fish"
 
 puts "p2: after 256 days, there are #{count_fish(init_fish, 256)} fish"
