@@ -6,6 +6,10 @@ class Calculator
     @bounds = initial_crabs.min..initial_crabs.max
   end
 
+  def calc_move_cost(from, to)
+    (to - from).abs
+  end
+
   # a hash of [start_pos, final_pos] => cost
   def move_costs
     @move_costs ||=
@@ -13,7 +17,7 @@ class Calculator
         Hash[
           @bounds.flat_map do |final_pos|
             @initial_crabs.map do |crab|
-              [[crab, final_pos], (final_pos - crab).abs]
+              [[crab, final_pos], calc_move_cost(crab, final_pos)]
             end
           end
         ]
@@ -38,18 +42,8 @@ class Calculator
 end
 
 class Calculator2 < Calculator
-  def move_costs
-    @move_costs ||=
-      begin
-        Hash[
-          @bounds.flat_map do |final_pos|
-            @initial_crabs.map do |crab|
-              cost = (1..(final_pos - crab).abs).sum
-              [[crab, final_pos], cost]
-            end
-          end
-        ]
-      end
+  def calc_move_cost(from, to)
+    (1..(to - from).abs).sum
   end
 end
 
