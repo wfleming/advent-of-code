@@ -1,0 +1,26 @@
+cpy a b     # begin: b = a - 1
+dec b       # end: b = a - 1
+cpy a d     # begin: a = a * b
+cpy 0 a
+cpy b c
+inc a
+dec c       # c always ends up 0
+jnz c -2
+dec d       # d always ends up 0
+jnz d -5    # end: a = a * b
+dec b       # b = b - 1
+cpy b c     # c = b
+cpy c d     # begin: c = c * 2
+dec d
+inc c
+jnz d -2    # end: c = c * 2
+tgl c       # nothing until c <= 9, then I think it would progressively toggle alternating instructions after this?
+cpy -16 c   # set amount to jump
+jnz 1 c     # jump c (-16) (back to beginning of a = a * b)
+cpy 75 c    #
+jnz 78 d    # toggled to cpy?
+inc a
+inc d       # toggled to dec?
+jnz d -2    # because I think *alternate* instrucions get toggled, I think the few instructions here are a = a + 78?
+inc c       # gets toggled to a dec, so it counts down before halting. I think it loops the (a = a + 78) 75 times?
+jnz c -5    # jump to jnz 78 d if c != 0
