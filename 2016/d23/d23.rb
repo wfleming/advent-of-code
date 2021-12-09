@@ -61,10 +61,6 @@ class VM
   def run
     step while !halted?
   end
-
-  def optimize!
-    @instructions = Optimizer.new(@instructions.clone).optimized
-  end
 end
 
 vm = VM.parse(ARGV[0])
