@@ -11,6 +11,7 @@ all:
 	(cd d09 && ./d09.rb input.txt)
 	(cd d10 && ./d10.rb input.txt)
 	(cd d11 && ./d11.rb input.txt)
+	(cd d12 && ./d12.rb input.txt)
 
 CC=$(shell command -v g++ || command -v clang)
 build_cpp:
