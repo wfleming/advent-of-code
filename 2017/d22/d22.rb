@@ -21,6 +21,10 @@ Virus = Struct.new(:pos, :dir) do
     # sin270 = -1, cos270 = 0
     self.class.new(pos, Point.new(dir.y, -1 * dir.x))
   end
+
+  def reverse
+    self.class.new(pos, Point.new(0 - dir.x, 0 - dir.y))
+  end
 end
 
 Map = Struct.new(:infected, :virus) do
@@ -37,18 +41,19 @@ Map = Struct.new(:infected, :virus) do
     new(infected, Virus.new(Point.new((width - 1) / 2, (height - 1) / 2), Point.new(0, 1)))
   end
 
-  def step
-    new_virus = virus.clone
-    new_infected = infected.clone
+  def step!
     if infected.include?(virus.pos)
-      new_virus = new_virus.turn_right
-      new_infected.delete(new_virus.pos)
+      virus.dir = virus.turn_right.dir
+      infected.delete(virus.pos)
     else
-      new_virus = new_virus.turn_left
-      new_infected << new_virus.pos
+      virus.dir = virus.turn_left.dir
+      infected << virus.pos
     end
-    new_virus.pos = new_virus.pos + new_virus.dir
-    self.class.new(new_infected, new_virus)
+    virus.pos = virus.pos + virus.dir
+  end
+
+  def infected?(pt)
+    infected.include?(pt)
   end
 
   def to_s
@@ -64,12 +69,43 @@ Map = Struct.new(:infected, :virus) do
   end
 end
 
+Map2 = Struct.new(:nodes, :virus) do
+  def self.from_map(map)
+    nodes = Hash[map.infected.map { |p| [p, :infected] }]
+    new(nodes, map.virus.clone)
+  end
+
+  def infected?(pt)
+    nodes[pt] == :infected
+  end
+
+  def step!
+    case nodes[virus.pos]
+    when :infected
+      virus.dir = virus.turn_right.dir
+      nodes[virus.pos] = :flagged
+    when :weakened
+      # no change in direction
+      nodes[virus.pos] = :infected
+    when :flagged
+      virus.dir = virus.reverse.dir
+      nodes[virus.pos] = :clean
+    else
+      virus.dir = virus.turn_left.dir
+      nodes[virus.pos] = :weakened
+    end
+    virus.pos = virus.pos + virus.dir
+  end
+end
+
 def count_infections(iters, map)
   infections = 0
-  iters.times do
-    next_map = map.step
-    infections += 1 if next_map.infected.include?(map.virus.pos) && !map.infected.include?(map.virus.pos)
-    map = next_map
+  iters.times do |i|
+    # puts "DEBUG: i=#{i} (#{((i.to_f / iters) * 100).round(2)}%)" if i % 100_000 == 0
+    cur_pos = map.virus.pos
+    is_infected = map.infected?(cur_pos)
+    map.step!
+    infections += 1 if !is_infected && map.infected?(cur_pos)
   end
   infections
 end
@@ -79,4 +115,8 @@ if __FILE__ == $0
 
   bursts = 10_000
   puts "p1: in #{bursts} bursts, #{count_infections(bursts, map)} infections occurred"
+
+  map2 = Map2.from_map(Map.parse(File.readlines(ARGV[0])))
+  bursts = 10_000_000
+  puts "p2: in #{bursts} bursts, #{count_infections(bursts, map2)} infections occurred"
 end
