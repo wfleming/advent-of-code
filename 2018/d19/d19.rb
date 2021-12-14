@@ -1,5 +1,4 @@
 require "d16"
-require "pry" #DEBUG
 
 class Machine19 < Machine
   attr_reader :instructions, :ip_reg, :ip
@@ -28,196 +27,44 @@ class Machine19 < Machine
   end
 
   def run
-    while (op = @instructions[ip])
-      tick
-    end
+    tick while @instructions[ip]
   end
 
   def tick
-    if (op = @instructions[ip])
-      apply(op)
-      true
-    else
-      false
-    end
+    apply(@instructions[ip])
   end
 
   def apply(op)
     registers[ip_reg] = ip
+    instr = @instructions[ip]
     super
     @ip = registers[ip_reg] + 1
   end
 end
 
-class Compiler
-  attr_reader :machine
+def p2(r0)
+  # program starts by jumping to ip=17 (addi 3 2 3)
+  # ip 17-24 initialize r3 to a large number (larger when r0 = 1)
+  # then jump back to ip = 1
+  # then ip 1-16 loop (r1, r2) through all vals 0..(r3 + 1)
+  # and for each pair, increment r0 by r2 when r1 * r2 == r3
+  # "sum of all divisors of r3"
 
-  def initialize(machine)
-    @machine = machine
-  end
+  # Could transcribe the math here for calculating r3, but this way I can
+  # support other inputs
+  m = Machine19.parse(File.read(ARGV[0]))
+  m.registers[0] = r0
+  m.tick until m.ip == 1
+  iterations = m.registers[3]
 
-  # return str
-  def compile
-    # beginning boilerplate
-    src = <<~HEADER
-    #include <stdlib.h>
-    #include <stdio.h>
-
-    typedef struct {
-      int ipreg, ip;
-      int rs[6];
-    } State;
-    HEADER
-
-    # write functions for processing
-    machine.instructions.each_with_index do |op, idx|
-      src << "\n#{op_fn_def(op, idx)}\n"
-    end
-    src << "\n#{run_fn_def}\n\n"
-
-    # main function
-    src << <<~MAIN
-    int main() {
-      // init State
-      State *s = malloc(sizeof(State));
-      s->ipreg = #{machine.ip_reg};
-      s->ip = #{machine.ip};
-    MAIN
-
-    machine.registers.each_with_index do |r, idx|
-      src << "  s->rs[#{idx}] = #{r};\n"
-    end
-
-    src << <<~SRC
-
-      // run machine
-      while(s->ip >= 0 && s->ip < #{machine.instructions.count}) {
-        s->rs[s->ipreg] = s->ip;
-        run_op(s);
-        s->ip = s->rs[s->ipreg] + 1;
-      }
-
-      // print result
-      printf("reg 0 is %d\\n", s->rs[0]);
-      return 0;
-    }
-    SRC
-
-    src
-  end
-
-  def run_fn_def
-    src = <<~SRC
-    void run_op(State *s) {
-      switch (s->ip) {
-    SRC
-
-    machine.instructions.each_with_index do |_, idx|
-      src << indent(<<~SRC, 2) + "\n"
-        case #{idx}:
-          op_#{idx}(s);
-          break;
-      SRC
-    end
-
-    src << "  }\n\n}"
-    src
-  end
-
-  def op_fn_def(op, idx)
-    src = <<~SRC
-    void op_#{idx}(State *s) {
-    SRC
-
-    body =
-      case op[0]
-      when "addr"
-        "s->rs[#{op[3]}] = s->rs[#{op[1]}] + s->rs[#{op[2]}];"
-      when "addi"
-        "s->rs[#{op[3]}] = s->rs[#{op[1]}] + #{op[2]};"
-      when "mulr"
-        "s->rs[#{op[3]}] = s->rs[#{op[1]}] * s->rs[#{op[2]}];"
-      when "muli"
-        "s->rs[#{op[3]}] = s->rs[#{op[1]}] * #{op[2]};"
-      when "banr"
-        "s->rs[#{op[3]}] = s->rs[#{op[1]}] & s->rs[#{op[2]}];"
-      when "bani"
-        "s->rs[#{op[3]}] = s->rs[#{op[1]}] & #{op[2]};"
-      when "borr"
-        "s->rs[#{op[3]}] = s->rs[#{op[1]}] | s->rs[#{op[2]}];"
-      when "bori"
-        "s->rs[#{op[3]}] = s->rs[#{op[1]}] | #{op[2]};"
-      when "setr"
-        "s->rs[#{op[3]}] = s->rs[#{op[1]}];"
-      when "seti"
-        "s->rs[#{op[3]}] = #{op[1]};"
-      when "gtir"
-        <<~SRC
-          if (#{op[1]} > s->rs[#{op[2]}]) {
-            s->rs[#{op[3]}] = 1;
-          } else {
-            s->rs[#{op[3]}] = 0;
-          }
-        SRC
-      when "gtri"
-        <<~SRC
-          if (s->rs[#{op[1]}] > #{op[2]}) {
-            s->rs[#{op[3]}] = 1;
-          } else {
-            s->rs[#{op[3]}] = 0;
-          }
-        SRC
-      when "gtrr"
-        <<~SRC
-          if (s->rs[#{op[1]}] > s->rs[#{op[2]}]) {
-            s->rs[#{op[3]}] = 1;
-          } else {
-            s->rs[#{op[3]}] = 0;
-          }
-        SRC
-      when "eqir"
-        <<~SRC
-          if (#{op[1]} == s->rs[#{op[2]}]) {
-            s->rs[#{op[3]}] = 1;
-          } else {
-            s->rs[#{op[3]}] = 0;
-          }
-        SRC
-      when "eqri"
-        <<~SRC
-          if (s->rs[#{op[1]}] == #{op[2]}) {
-            s->rs[#{op[3]}] = 1;
-          } else {
-            s->rs[#{op[3]}] = 0;
-          }
-        SRC
-      when "eqrr"
-        <<~SRC
-          if (s->rs[#{op[1]}] == s->rs[#{op[2]}]) {
-            s->rs[#{op[3]}] = 1;
-          } else {
-            s->rs[#{op[3]}] = 0;
-          }
-        SRC
-      end
-    src << indent(body)
-    src << "\n}"
-  end
-
-  def indent(str, level = 1)
-    str.lines.map do |l|
-      ("  " * level) + l.rstrip
-    end.join("\n")
-  end
+  (1..iterations).select { |x| iterations % x == 0 }.sum
 end
 
 if $0 == __FILE__
-  # m = Machine19.parse(File.read(ARGV[0]))
-  # m.run
-  # puts "p1: registers after halt are #{m.registers}"
-
   m = Machine19.parse(File.read(ARGV[0]))
-  m.registers[0] = 1
-  File.open("d19p2.c", "w") { |fh| fh.write(Compiler.new(m).compile) }
-  puts "p2: c source written d19p2.c, compile and run that"
+  m.run
+  puts "p1: registers after halt are #{m.registers}"
+  puts "p1 with p2 impl: after halting r0 = #{p2(0)}"
+
+  puts "p2: after halting r0 = #{p2(1)}"
 end
