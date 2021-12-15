@@ -1,40 +1,28 @@
-require "pry" # DEBUG
+require "set"
 require "pqueue"
-require "forwardable"
 
-Point = Struct.new(:x, :y)
-
-def pt(x, y)
-  Point.new(x, y)
+Point = Struct.new(:x, :y) do
+  def to_s
+    "(#{x}, #{y})"
+  end
 end
 
 class Graph
   include Enumerable
-  extend Forwardable
-
-  Node = Struct.new(:id, :edges)
 
   attr_reader :vertices
 
-  def_delegators :@vertices, :each
-
   def initialize(root)
-    @vertices = [root]
+    # vertices is a hash of pt => connected_pts
+    @vertices = { root => Set.new }
   end
 
-  def add_edge(id_a, id_b, reverse: false)
-    find_node(id_a).edges << find_or_build_node(id_b)
-    if reverse
-      find_node(id_b).edges << find_node(id_a)
-    end
-  end
+  def add_edge(id_a, id_b)
+    vertices[id_a] ||= Set.new
+    vertices[id_b] ||= Set.new
 
-  def find_or_build_node(id)
-    find_node(id) || Node.new(id, []).tap { |n| @vertices << n }
-  end
-
-  def find_node(id)
-    find { |n| n.id == id }
+    vertices[id_a] << id_b
+    vertices[id_b] << id_a
   end
 end
 
@@ -46,82 +34,80 @@ class Parser
   end
 
   def build_graph
-    r = Graph::Node.new(pt(0, 0), [])
-    g = Graph.new(r)
+    root = Point.new(0, 0)
+    g = Graph.new(root)
 
     input.shift if input[0] == "^"
-    walk(g, r.id)
+    walk(g, input, root)
 
     g
   end
 
-  def walk(graph, root_id)
+  def walk(graph, pattern, root_id, indent="")
     current_id = root_id
-    while (c = input.shift)
+    while (c = pattern.shift)
       if $verbose
         print "\033[1A\033[" if @progress_printed
         @progress_printed = true
-        puts "_ graph has #{graph.count} nodes"
+        puts "_ graph has #{graph.vertices.count} nodes"
       end
-      next_pt =
-        case c
-        when "N"
-          current_id = pt(current_id.x, current_id.y - 1).tap do |pt2|
-            graph.add_edge(current_id, pt2)
-          end
-        when "S"
-          current_id = pt(current_id.x, current_id.y + 1).tap do |pt2|
-            graph.add_edge(current_id, pt2)
-          end
-        when "W"
-          current_id = pt(current_id.x - 1, current_id.y).tap do |pt2|
-            graph.add_edge(current_id, pt2)
-          end
-        when "E"
-          current_id = pt(current_id.x + 1, current_id.y).tap do |pt2|
-            graph.add_edge(current_id, pt2)
-          end
-        when "(" # push onto stack
-          walk(graph, current_id)
-        when "|" # alt route
-          walk(graph, root_id)
-        when ")" # pop stack
-          break
-        when "$" # end of the regex
-          break
+
+      case c
+      when "N"
+        current_id = Point.new(current_id.x, current_id.y - 1).tap do |pt2|
+          graph.add_edge(current_id, pt2)
         end
+      when "S"
+        current_id = Point.new(current_id.x, current_id.y + 1).tap do |pt2|
+          graph.add_edge(current_id, pt2)
+        end
+      when "W"
+        current_id = Point.new(current_id.x - 1, current_id.y).tap do |pt2|
+          graph.add_edge(current_id, pt2)
+        end
+      when "E"
+        current_id = Point.new(current_id.x + 1, current_id.y).tap do |pt2|
+          graph.add_edge(current_id, pt2)
+        end
+      when "(" # push onto stack
+        walk(graph, pattern, current_id, indent + "  ")
+      when "|" # alt route
+        current_id = root_id
+      when ")" # pop stack
+        return
+      when "$" # end of the regex
+        break
+      end
     end
   end
 end
 
 def viz(graph)
-  min_x = graph.map(&:id).map(&:x).min
-  max_x = graph.map(&:id).map(&:x).max
-  min_y = graph.map(&:id).map(&:y).min
-  max_y = graph.map(&:id).map(&:y).max
+  x_range = graph.vertices.keys.minmax_by(&:x).map(&:x)
+  y_range = graph.vertices.keys.minmax_by(&:y).map(&:y)
 
-  width = (1 + max_x - min_x) * 2 + 1
+  width = (1 + x_range[1] - x_range[0]) * 2 + 1
 
   lines = ["#" * width]
 
-  (min_y..max_y).each do |y|
+  (y_range[0]..y_range[1]).each do |y|
     # line1 contains this y, line2 contains walls & doors to y + 1
     line1 = "#"
     line2 = "#"
-    (min_x..max_x).each do |x|
-      p = pt(x, y)
-      n = graph.find_node(p)
+    (x_range[0]..x_range[1]).each do |x|
+      p = Point.new(x, y)
+      edges = graph.vertices[p]
 
-      if n
-        line1 << (p == pt(0,0) ? "X" : ".")
-        right = pt(x + 1, y)
-        if n.edges.find { |n2| n2.id == right } || graph.find_node(right)&.edges&.map(&:id)&.include?(p)
+      if edges&.any?
+        line1 << (p == Point.new(0,0) ? "X" : ".")
+        right = Point.new(x + 1, y)
+        if edges.include?(right)
           line1 << "|"
         else
           line1 << "#"
         end
-        down = pt(x, y + 1)
-        if n.edges.find { |n2| n2.id == down } || graph.find_node(down)&.edges&.map(&:id)&.include?(p)
+        down = Point.new(x, y + 1)
+        if edges.include?(down)
           line2 << "-#"
         else
           line2 << "##"
@@ -145,6 +131,7 @@ Pair = Struct.new(:id, :dist) do
   end
 end
 
+# basically djikstra
 def best_distances(graph, start)
   progress_printed = false
 
@@ -154,9 +141,9 @@ def best_distances(graph, start)
 
   while queue.size > 0
     pair = queue.shift
-    n, d = pair.id, pair.dist
+    pos, d = pair.id, pair.dist
 
-    next if best_from.key?(n) && best_from[n] <= d
+    next if best_from.key?(pos) && best_from[pos] <= d
 
     if $verbose
       print "\033[1A\033[" if progress_printed
@@ -164,26 +151,25 @@ def best_distances(graph, start)
       puts "_ searching seen #{best_from.count}, #{queue.size} in queue"
     end
 
-    best_from[n] = d
+    best_from[pos] = d
 
-    graph.find_node(n).edges.each do |edge|
-      queue << Pair.new(edge.id, d + 1)
+    graph.vertices[pos]&.each do |edge|
+      queue << Pair.new(edge, d + 1)
     end
   end
 
   best_from
 end
 
-def p1(g)
-  distances = best_distances(g, pt(0, 0))
-  distances.values.max
-end
-
 if $0 == __FILE__
-  $verbose = true
-  puts "going to build graph"
+  $verbose = false
+  puts "going to build graph" if $verbose
   g = Parser.new(File.read(ARGV[0]).strip).build_graph
 
-  puts "going to build distances from graph"
-  puts "p1: furthest room is #{p1(g)} moves away"
+  room_distances = best_distances(g, Point.new(0, 0))
+  p1_ans = room_distances.values.max
+  puts "going to build distances from graph" if $verbose
+  puts "p1: furthest room is #{p1_ans} moves away"
+  p2_ans = room_distances.count { |_pos, dist| dist >= 1_000 }
+  puts "p2: #{p2_ans} rooms require at least 1,000 steps"
 end
