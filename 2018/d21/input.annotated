@@ -1,0 +1,40 @@
+#ip 1
+ 0: seti 123 0 2      ; r2 = 123
+ 1: bani 2 456 2      ; r2 = r2 & 456 (72)
+ 2: eqri 2 72 2       ; r2 = 1 if r2 == 72 (it does, so r2 = 1)
+ 3: addr 2 1 1        ; r1 = r1 + r2 (r1 is ip, so = 3 + 1, so jmp to 5)
+ 4: seti 0 0 1        ; r1 = 0 (jmp to 1 - loop the verification test if it failed)
+ 5: seti 0 3 2        ; r2 = 0 (clear it before starting the rest of the logic)
+
+ ; loop starts here
+ 6: bori 2 65536 5    ; r5 = r2 | 65536
+ 7: seti 4843319 1 2  ; r2 = 4843319
+ 8: bani 5 255 4      ; r4 = r5 & 255
+ 9: addr 2 4 2        ; r2 = r2 + r4
+10: bani 2 16777215 2 ; r2 = r2 & 16777215
+11: muli 2 65899 2    ; r2 = r2 * 65899
+12: bani 2 16777215 2 ; r2 = r2 & 16777215
+
+; if r5 <= 256 jmp to 28 else jmp to 17
+13: gtir 256 5 4      ; r4 = 256 > r5
+14: addr 4 1 1        ; r1 = r4 + r1 (jmp forward r4 + 1)
+15: addi 1 1 1        ; if !(256 > r5): r1 = r1 + 1 (skip next line)
+16: seti 27 4 1       ; if 256 > r5: r1 = 27 (jmp to 28)
+
+17: seti 0 7 4        ; r4 = 0
+18: addi 4 1 3        ; r3 = r4 + 1
+19: muli 3 256 3      ; r3 = r3 * 256
+
+; if r3 > r5 jmp to 26 else jmp to 24
+20: gtrr 3 5 3        ; r3 = r3 > r5
+21: addr 3 1 1        ; r1 = r1 + r3 (if stmt based on with above)
+22: addi 1 1 1        ; r1 = r1 + 1 (skip next line)
+23: seti 25 0 1       ; r1 = 25 (jmp to 26)
+
+24: addi 4 1 4        ; r4 = r4 + 1
+25: seti 17 0 1       ; r1 = 17 (jmp to 18)
+26: setr 4 1 5        ; r5 = r4
+27: seti 7 3 1        ; r1 = 7 (jmp to 8)
+28: eqrr 2 0 4        ; r4 = r2 == r0
+29: addr 4 1 1        ; r1 = r1 + r4 (halt when r2 == r0)
+30: seti 5 3 1        ; r1 = 5 (jmp to 6, beginning of loop)
