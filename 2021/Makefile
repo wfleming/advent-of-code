@@ -21,7 +21,7 @@ all:
 	(cd d20 && ./d20.rb input.txt)
 	(cd d21 && ./d21.rb input.txt)
 
-CC=$(shell command -v g++ || command -v clang)
+CC=$(shell command -v g++ || command -v clang++)
 build_cpp:
 	$(CC) -std=c++17 -Wextra -Wall -Werror -o d01/d01.bin d01/d01.cpp
 
