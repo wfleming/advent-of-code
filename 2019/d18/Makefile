@@ -1,5 +1,5 @@
 CC=$(shell command -v g++ || command -v clang++)
-CXXFLAGS=-std=c++17 -Wall -Wextra -Werror -I../../lib/cpp/
+CXXFLAGS=-std=c++20 -Wall -Wextra -Werror -I../../lib/cpp/
 
 .PHONY: watch
 watch:
