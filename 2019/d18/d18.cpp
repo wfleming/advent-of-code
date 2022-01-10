@@ -135,16 +135,12 @@ class Maze {
     }
 
     Maze step_to(Point dest) {
-      Maze maze = Maze();
-      maze.floor = floor;
-      maze.doors = doors;
-      maze.keys = keys;
-      maze.held_keys = held_keys;
+      Maze copy = Maze(*this);
       if (keys->contains(dest) && !held_keys.contains((*keys)[dest])) {
-        maze.held_keys.insert((*keys)[dest]);
+        copy.held_keys.insert((*keys)[dest]);
       }
-      maze.cur_pos = dest;
-      return maze;
+      copy.cur_pos = dest;
+      return copy;
     }
 
     bool is_goal() {
@@ -203,16 +199,17 @@ vector<Maze> astar(Maze start) {
   unordered_map<Maze, unsigned int> f_score;
   unordered_map<Maze, unsigned int> g_score;
   auto compare = [&f_score](auto a, auto b) { return f_score[a] > f_score[b]; }; // > so that lower f_scores are first in queue
-  priority_queue<Maze, vector<Maze>, decltype(compare)> open_set(compare);
+  vector<Maze> open_set{start};
 
   g_score[start] = 0;
   f_score[start] = start.f_score();
-  open_set.push(start);
+  make_heap(open_set.begin(), open_set.end(), compare);
 
   while (open_set.size() > 0) {
-    auto cur_node = open_set.top();
+    pop_heap(open_set.begin(), open_set.end(), compare);
+    auto cur_node = open_set.back();
+    open_set.pop_back();
     /* cout << "DEBUG: cur_node.f_score = " << cur_node.f_score() << endl; */
-    open_set.pop();
 
     if (cur_node.is_goal()) {
       return reconstruct_path(came_from, cur_node);
@@ -226,7 +223,10 @@ vector<Maze> astar(Maze start) {
         came_from[next_node] = cur_node;
         g_score[next_node] = node_g_score;
         f_score[next_node] = node_g_score + next_node.f_score();
-        open_set.push(next_node); // can't see a good way to check the membership first, should I use a vector with make_heap, etc. directly?
+        open_set.push_back(next_node);
+        if (find(open_set.begin(), open_set.end(), next_node) != open_set.end()) {
+          push_heap(open_set.begin(), open_set.end(), compare);
+        }
       }
     }
   }
