@@ -1,4 +1,4 @@
-CC=$(shell command -v g++ || command -v clang++)
+CC=$(shell command -v clang++ || command -v g++)
 CXXFLAGS=-std=c++20 -Wall -Wextra -Werror -I../../lib/cpp/
 
 .PHONY: watch
