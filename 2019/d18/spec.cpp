@@ -18,35 +18,33 @@ TEST_CASE("==", "[Point]") {
 }
 
 TEST_CASE("parse", "[Maze]") {
-  auto in = istringstream{sample_input};
-  auto maze = Maze::parse(in);
+  auto maze = Maze::parse(istringstream{sample_input});
 
-  REQUIRE(maze.cur_pos == Point(15,1));
+  REQUIRE(maze.start == Point(15,1));
 }
 
-TEST_CASE("step_to", "[Maze]") {
-  auto in = istringstream{sample_input};
-  auto maze = Maze::parse(in);
+TEST_CASE("find-path-to-a", "[find_path]") {
+  auto maze = Maze::parse(istringstream{sample_input});
+  auto pts = find_path(maze, maze.start, Point(17,1), set<char>{});
 
-  // step_to doesn't validate that the dest is a neighbor of cur_pos, which I'm
-  // taking advantage of here. In production code step_to would verify that
-  // invariant here, but for AOC it's fine since I know `next_states` takes care
-  // of it, and it's convenient for a test here.
-  auto maze2 = maze.step_to(Point(17, 1));
-
-  REQUIRE(maze2.cur_pos == Point(17,1));
-  REQUIRE(maze.cur_pos == Point(15,1)); // original maze should not have changed
-
-  REQUIRE(maze2.held_keys.size() == 1);
-  REQUIRE(maze2.held_keys.contains('a'));
-  REQUIRE(maze.held_keys.size() == 0); // original maze should not have changed
+  REQUIRE(pts.size() == 3); // 2 steps
 }
 
-TEST_CASE("search", "[astar]") {
-  auto in = istringstream{sample_input};
-  auto maze = Maze::parse(in);
+TEST_CASE("find-path-to-b", "[find_path]") {
+  auto maze = Maze::parse(istringstream{sample_input});
+  auto pts = find_path(maze, maze.start, Point(11,1), set<char>{});
 
-  auto path = astar(maze);
+  REQUIRE(pts.size() == 0); // can't walk to b without the key for A
 
-  REQUIRE(path.size() == 87); // should be 86 steps, which means 87 states
+  pts = find_path(maze, maze.start, Point(11,1), set<char>{'a'});
+
+  REQUIRE(pts.size() == 5); // with key a it takes 4 steps
+}
+
+TEST_CASE("search", "[part1]") {
+  auto maze = Maze::parse(istringstream{sample_input});
+
+  auto path = part1(maze);
+
+  REQUIRE(path.steps == 86);
 }

@@ -35,7 +35,7 @@ class Point {
       return abs(x - other.x) + abs(y - other.y);
     }
 
-    vector<Point> neighbors() {
+    vector<Point> neighbors() const {
       vector<Point> v{
         Point(x - 1, y),
         Point(x + 1, y),
@@ -58,14 +58,12 @@ template<> struct std::hash<Point> {
 
 class Maze {
   public:
-    shared_ptr<unordered_set<Point>> floor;
-    shared_ptr<unordered_map<Point, char>> doors;
-    shared_ptr<unordered_map<Point, char>> keys;
-    Point cur_pos;
-    char goal_key;
-    set<char> held_keys;
+    unordered_set<Point> floor;
+    unordered_map<Point, char> doors;
+    unordered_map<Point, char> keys;
+    Point start;
 
-    static Maze parse(istream& in) {
+    static Maze parse(istream&& in) {
       Maze maze = Maze();
       unsigned int y = 0;
       string line;
@@ -75,16 +73,16 @@ class Maze {
           char c = line[x];
           Point p = Point(x,y);
           if (c == '.') {
-            maze.floor->insert(p);
+            maze.floor.insert(p);
           } else if (c == '@') {
-            maze.floor->insert(p);
-            maze.cur_pos = p;
+            maze.floor.insert(p);
+            maze.start = p;
           } else if (isupper(c)) {
-            maze.floor->insert(p);
-            (*maze.doors)[p] = c;
+            maze.floor.insert(p);
+            maze.doors[p] = c;
           } else if (islower(c)) {
-            maze.floor->insert(p);
-            (*maze.keys)[p] = c;
+            maze.floor.insert(p);
+            maze.keys[p] = c;
           }
         }
         y++;
@@ -94,144 +92,167 @@ class Maze {
 
     Maze():
       // is there a more concise way to say this? I'm surprised I can't omit the
-      // types and do shared_ptr<>{...}
-      floor{shared_ptr<unordered_set<Point>>{new unordered_set<Point>()}},
-      doors{shared_ptr<unordered_map<Point, char>>{new unordered_map<Point, char>()}},
-      keys{shared_ptr<unordered_map<Point, char>>{new unordered_map<Point, char>()}},
-      cur_pos{Point(0,0)},
-      goal_key{'_'},
-      held_keys{set<char>()}
-      { };
-
-    // similar to hash below, we only really need to check cur_pos & held_keys
-    bool operator==(const Maze& other) const {
-      return other.cur_pos == cur_pos && other.held_keys == held_keys;
-    }
-
-    bool operator!=(const Maze& other) const {
-      return !(*this == other);
-    }
-
-    vector<char> available_keys() {
-      vector<char> rv;
-      for (auto p : *keys) {
-        if (!held_keys.contains(p.second)) {
-          rv.push_back(p.second);
-        }
-      }
-      return rv;
-    }
-
-    bool can_open(char door) {
-      return held_keys.contains(tolower(door));
-    }
-
-    bool can_step(const Point& dest) {
-      if (doors->contains(dest)) {
-        return can_open((*doors)[dest]);
-      } else {
-        return floor->contains(dest);
-      }
-    }
-
-    Maze step_to(Point dest) {
-      Maze copy = Maze(*this);
-      if (keys->contains(dest) && !held_keys.contains((*keys)[dest])) {
-        copy.held_keys.insert((*keys)[dest]);
-      }
-      copy.cur_pos = dest;
-      return copy;
-    }
-
-    bool is_goal() {
-      for (auto p : *keys) {
-        if (!held_keys.contains(p.second)) { return false; }
-      }
-      return true;
-    }
-
-    unsigned int f_score() {
-      // use the total manhattan distance to every key we *don't* have.
-      int f = 0;
-      for (auto p : *keys) {
-        if (!held_keys.contains(p.second)) {
-          f += cur_pos.distance(p.first);
-        }
-      }
-      return f;
-    }
-
-    vector<Maze> next_states() {
-      vector<Maze> rv;
-      for (auto n : cur_pos.neighbors()) {
-        if (can_step(n)) {
-          rv.push_back(step_to(n));
-        }
-      }
-      return rv;
-    }
+      // types and do unordered_set<>{...}
+      floor{unordered_set<Point>()},
+      doors{unordered_map<Point, char>()},
+      keys{unordered_map<Point, char>()},
+      start{Point()}
+      {};
 };
 
-template<> struct std::hash<Maze> {
-  size_t operator()(const Maze& m) const noexcept {
-    // we can safely omit floor, door, keys since they're the same for every
-    // instance we'll be dealing with.
-    size_t h = std::hash<Point>{}(m.cur_pos);
-    for(auto it = m.held_keys.begin(); it != m.held_keys.end(); it++) {
-      size_t idx = distance(m.held_keys.begin(), it);
-      h ^= (std::hash<char>{}(*it) << idx);
-    }
-    return h;
-  }
-};
-
-vector<Maze> reconstruct_path(unordered_map<Maze, Maze> came_from, Maze last_node) {
-  vector<Maze> rv{last_node};
-  while (came_from.contains(last_node)) {
-    last_node = came_from[last_node];
-    rv.push_back(last_node);
+vector<Point> reconstruct_path(unordered_map<Point, Point> came_from, Point last_pos) {
+  vector<Point> rv{last_pos};
+  while (came_from.contains(last_pos)) {
+    last_pos = came_from[last_pos];
+    rv.push_back(last_pos);
   }
   return rv;
 }
 
-vector<Maze> astar(Maze start) {
-  unordered_map<Maze, Maze> came_from;
-  unordered_map<Maze, unsigned int> f_score;
-  unordered_map<Maze, unsigned int> g_score;
-  auto compare = [&f_score](auto a, auto b) { return f_score[a] > f_score[b]; }; // > so that lower f_scores are first in queue
-  vector<Maze> open_set{start};
+// A* search to walk between two points
+vector<Point> find_path(const Maze& maze, const Point &start, const Point &goal, const set<char> held_keys) {
+  unordered_map<Point, Point> came_from;
+  unordered_map<Point, unsigned int> f_score;
+  unordered_map<Point, unsigned int> g_score;
+  auto compare = [&f_score](auto a, auto b) { return f_score[a] > f_score[b]; };
+  vector<Point> open_set{start};
 
   g_score[start] = 0;
-  f_score[start] = start.f_score();
-  make_heap(open_set.begin(), open_set.end(), compare);
+  f_score[start] = start.distance(goal);
+  ranges::make_heap(open_set, compare);
 
   while (open_set.size() > 0) {
-    pop_heap(open_set.begin(), open_set.end(), compare);
+    ranges::pop_heap(open_set, compare);
     auto cur_node = open_set.back();
     open_set.pop_back();
-    /* cout << "DEBUG: cur_node.f_score = " << cur_node.f_score() << endl; */
+    /* cout << "DEBUG: cur_node.f_score = " << cur_node.f_score() << " queue:"; for (auto m : open_set) { cout << m.f_score() << ", "; } cout << endl; */
 
-    if (cur_node.is_goal()) {
+    if (cur_node == goal) {
       return reconstruct_path(came_from, cur_node);
     }
 
-    for(auto next_node : cur_node.next_states()) {
+    // bot can  step to neighboring point if 1) pt is just floor or 2) pt is
+    // goal or 3) pt is a key we already have or 4) pt is a door we have key for
+    vector<Point> next_states{};
+    for (auto p : cur_node.neighbors()) {
+      if (p == goal) {
+        next_states.push_back(p);
+      } else if (maze.doors.contains(p)) { // it's a door, check if we can open it
+        if (held_keys.contains(tolower(maze.doors.at(p)))) { next_states.push_back(p); };
+      } else if (maze.keys.contains(p)) { // it's a key, check if we already have it
+        if (held_keys.contains(maze.keys.at(p))) { next_states.push_back(p); }
+      } else if (maze.floor.contains(p)) { // check it's floor
+        next_states.push_back(p);
+      }
+    }
+
+    for(auto next_node : next_states) {
+      /* cout << "\tDEBUG: from " << cur_node.cur_pos << " to " << next_node.cur_pos << endl; */
       unsigned int node_g_score = g_score[cur_node] + 1;
 
       if (!g_score.contains(next_node) || node_g_score < g_score[next_node]) {
         /* cout << "DEBUG: pushing next_node.f_score = " << next_node.f_score() << endl; */
         came_from[next_node] = cur_node;
         g_score[next_node] = node_g_score;
-        f_score[next_node] = node_g_score + next_node.f_score();
-        open_set.push_back(next_node);
-        if (find(open_set.begin(), open_set.end(), next_node) != open_set.end()) {
-          push_heap(open_set.begin(), open_set.end(), compare);
+        f_score[next_node] = node_g_score + next_node.distance(goal);
+        if (ranges::find(open_set, next_node) == open_set.end()) {
+          open_set.push_back(next_node);
+          ranges::push_heap(open_set, compare);
         }
       }
     }
   }
 
-  return vector<Maze>{}; // failure
+  return vector<Point>{}; // failure
+}
+
+struct Path {
+  shared_ptr<Maze> maze;
+  unsigned int steps;
+  Point pos;
+  set<char> keys;
+
+  Path(): maze{shared_ptr<Maze>{}}, steps{0}, pos{Point(0,0)}, keys{set<char>{}} {};
+  Path(const Maze& maze):
+    maze{shared_ptr<Maze>{new Maze(maze)}},
+    steps{0},
+    pos{Point(0,0)},
+    keys{set<char>{}}
+    {};
+
+  operator std::string() const {
+    ostringstream s;
+    s << "<Path steps=" << steps
+      << " pos=" << pos
+      << " keys=";
+    for (auto k : keys) { s << k; }
+    s  << '>';
+    return s.str();
+  }
+
+  // has found all keys
+  bool is_complete() const {
+    for (auto p : maze->keys) {
+      if (!keys.contains(p.second)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // walk to next available keys, return new set of paths
+  vector<Path> next_states() const {
+    vector<Path> rv;
+    auto start = pos;
+    if (pos == Point(0,0)) { // initial state, start at origin
+      start = maze->start;
+    }
+
+    for(auto p : maze->keys) {
+      if (keys.contains(p.second)) {
+        continue;
+      }
+
+      auto pts = find_path(*maze, start, p.first, keys);
+      if (pts.size() > 0) {
+        auto new_path = Path(*this);
+        new_path.steps += (pts.size() - 1);
+        new_path.pos = p.first;
+        new_path.keys.insert(p.second);
+        rv.push_back(new_path);
+      }
+    }
+
+    return rv;
+  }
+};
+
+Path part1(const Maze& maze) {
+  auto compare = [](auto a, auto b) { return a.steps > b.steps; };
+  vector<Path> open_set;
+  open_set.push_back(Path(maze));
+
+  ranges::make_heap(open_set, compare);
+
+  while (open_set.size() > 0) {
+    ranges::pop_heap(open_set, compare);
+    auto cur_path = open_set.back();
+    open_set.pop_back();
+    cout << "DEBUG: part1 loop cur=" << (string)cur_path << " queue=" << open_set.size() << " (" ;
+    for (unsigned long i = 0; i < min((unsigned long)10, open_set.size()); i++) { cout << open_set[i].steps << ", "; }
+    cout << ')' << endl; // DEBUG
+
+    if (cur_path.is_complete()) { // goal reached: full path to all keys
+      return cur_path;
+    }
+
+    for (auto next_path : cur_path.next_states()) {
+      open_set.push_back(next_path);
+      ranges::push_heap(open_set, compare);
+    }
+  }
+
+  return Path(); // failure
 }
 
 #ifndef IS_TEST
@@ -240,10 +261,10 @@ int main(int argc, char** argv) {
     std::cerr << "Provide input filename as argument" << std::endl;
     return 1;
   }
-  ifstream fh{argv[1]};
-  auto maze = Maze::parse(fh);
-  auto p1_path = astar(maze);
-  cout << "p1: " << p1_path.size() - 1 << " steps to get all keys" << endl;
+  auto maze = Maze::parse(ifstream{argv[1]});
+
+  auto p1path = part1(maze);
+  cout << "p1: " << p1path.steps << " steps";
   return 0;
 }
 #endif
