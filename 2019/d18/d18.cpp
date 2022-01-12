@@ -238,17 +238,29 @@ Path part1(const Maze& maze) {
     ranges::pop_heap(open_set, compare);
     auto cur_path = open_set.back();
     open_set.pop_back();
-    cout << "DEBUG: part1 loop cur=" << (string)cur_path << " queue=" << open_set.size() << " (" ;
-    for (unsigned long i = 0; i < min((unsigned long)10, open_set.size()); i++) { cout << open_set[i].steps << ", "; }
-    cout << ')' << endl; // DEBUG
+    /* cout << "DEBUG: part1 loop cur=" << (string)cur_path << " queue=" << open_set.size() << " (" ; */
+    /* for (unsigned long i = 0; i < min((unsigned long)10, open_set.size()); i++) { cout << open_set[i].steps << ", "; } */
+    /* cout << ')' << endl; // DEBUG */
 
     if (cur_path.is_complete()) { // goal reached: full path to all keys
       return cur_path;
     }
 
     for (auto next_path : cur_path.next_states()) {
-      open_set.push_back(next_path);
-      ranges::push_heap(open_set, compare);
+      // if open_set already has a path with the same pos & set of keys
+      // ... and more steps, replace it
+      // ... and fewer steps, stop pursuing current next_path
+      // otherwise no similar path exists, so queue up this one
+      auto existing = ranges::find_if(open_set, [&next_path](auto n) { return n.keys == next_path.keys && n.pos == next_path.pos; });
+      if (existing != open_set.end()) {
+        if (existing->steps > next_path.steps) {
+          swap(next_path, *existing);
+          ranges::make_heap(open_set, compare); // the swap can break the heap property, re-make the heap
+        } // no else, since we're just dropping this next_path
+      } else { // no similar path, insert this one
+        open_set.push_back(next_path);
+        ranges::push_heap(open_set, compare);
+      }
     }
   }
 
