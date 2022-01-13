@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <tuple>
 #include <queue>
 #include <set>
 #include <sstream>
@@ -176,9 +177,13 @@ struct Path {
   Path(const Maze& maze):
     maze{shared_ptr<Maze>{new Maze(maze)}},
     steps{0},
-    pos{Point(0,0)},
+    pos{maze.start},
     keys{set<char>{}}
     {};
+
+  bool operator==(const Path& other) const {
+    return other.maze == maze && other.steps == steps && other.pos == pos && other.keys == keys;
+  }
 
   operator std::string() const {
     ostringstream s;
@@ -227,12 +232,35 @@ struct Path {
   }
 };
 
+template<> struct std::hash<set<char>> {
+  size_t operator()(const set<char>& s) const noexcept {
+    size_t h = 0;
+    unsigned int i = 0;
+    for (auto c : s) {
+      h = h ^ (hash<char>{}(c) << i);
+      i++;
+    }
+    return h;
+  };
+};
+
+template<> struct std::hash<tuple<Point, set<char>, Point>> {
+  size_t operator()(const tuple<Point, set<char>, Point>& t) const noexcept {
+    auto h1 = hash<Point>{}(get<0>(t));
+    auto h2 = hash<set<char>>{}(get<1>(t));
+    auto h3 = hash<Point>{}(get<2>(t));
+    return h1 ^ (h2 << 1) ^ (h3 << 2);
+  }
+};
+
 Path part1(const Maze& maze) {
   auto compare = [](auto a, auto b) { return a.steps > b.steps; };
   vector<Path> open_set;
   open_set.push_back(Path(maze));
-
   ranges::make_heap(open_set, compare);
+
+  // cache from (origin pos, keys held, dest point) -> step count
+  unordered_map<tuple<Point, set<char>, Point>, unsigned int> cache;
 
   while (open_set.size() > 0) {
     ranges::pop_heap(open_set, compare);
@@ -246,20 +274,42 @@ Path part1(const Maze& maze) {
       return cur_path;
     }
 
-    for (auto next_path : cur_path.next_states()) {
-      // if open_set already has a path with the same pos & set of keys
-      // ... and more steps, replace it
-      // ... and fewer steps, stop pursuing current next_path
-      // otherwise no similar path exists, so queue up this one
-      auto existing = ranges::find_if(open_set, [&next_path](auto n) { return n.keys == next_path.keys && n.pos == next_path.pos; });
-      if (existing != open_set.end()) {
-        if (existing->steps > next_path.steps) {
-          swap(next_path, *existing);
-          ranges::make_heap(open_set, compare); // the swap can break the heap property, re-make the heap
-        } // no else, since we're just dropping this next_path
-      } else { // no similar path, insert this one
-        open_set.push_back(next_path);
-        ranges::push_heap(open_set, compare);
+    for(auto p : maze.keys) {
+      // if we already hold this key, skip
+      if (cur_path.keys.contains(p.second)) {
+        continue;
+      }
+
+      auto cache_key = make_tuple<>(cur_path.pos, cur_path.keys, p.first);
+      if (cache.contains(cache_key)) {
+        /* cout << "DEBUG: cache hit for pos=" << cur_path.pos << " keys="; */
+        /* for (auto c : cur_path.keys) { cout << c; } */
+        /* cout << "dest=" << p.first << " (" << p.second << ")" << endl; // DEBUG */
+
+        auto next_path = Path(cur_path);
+        next_path.steps += cache.at(cache_key);
+        next_path.pos = p.first;
+        next_path.keys.insert(p.second);
+
+        if (ranges::find(open_set, next_path) == open_set.end()) {
+          open_set.push_back(next_path);
+          ranges::push_heap(open_set, compare);
+        }
+      } else {
+        auto pts = find_path(maze, cur_path.pos, p.first, cur_path.keys);
+        if (pts.size() > 0) { // if the returned path is empty we can't walk there
+          auto next_path = Path(cur_path);
+          next_path.steps += pts.size() - 1;
+          next_path.pos = p.first;
+          next_path.keys.insert(p.second);
+
+          cache.insert(pair{cache_key, pts.size() - 1});
+
+          if (ranges::find(open_set, next_path) == open_set.end()) {
+            open_set.push_back(next_path);
+            ranges::push_heap(open_set, compare);
+          }
+        }
       }
     }
   }
