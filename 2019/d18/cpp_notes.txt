@@ -1,0 +1,160 @@
+Note: some of my complaints may be compiler specific. I started using gcc since
+I had it installed, then tried clang - clang error messages seem to be a bit
+clearer & less needlessly verbose in general than gcc, so I switched. But not
+massively so - my complaints about compiler messages below still apply. I have
+no familiarity with MSVC, so can't comment on that.
+
+I'm also self-teaching myself with a mixture of textbooks, reading the spec, and
+lots of googling, so it's entirely possible there are nice, idiomatic solutions
+to things like my complaint about needing to overload `<<` that I missed.
+
+Frustrations:
+
+- Using a custom type in an unordered_map
+  - Needing to implement a hash for keys, not a huge deal - but newer languages
+    like rust make it more straightforward, give better errors, and can derive
+    it more automatically. In C++ it's more boilerplate to write, and the
+    boilerplate you need is not well indicated by error messages.
+  - Some methods require the value type have a default constructor. Not a huge
+    deal, but a bit frustrating. First, because there could have been a much
+    more concise error message to say this, and second because while docs do say
+    that the default constructor will be used it's kind of buried in the prose.
+    Docs could do better at being like "here's the things your type needs to
+    implement for this and why".
+  - Often one issue would cause a cascade of difficult-to-parse errors. Like -
+    I'm missing an empty constructor, here's 100 lines of errors, most of which
+    point at standard library code and don't mention my type or the constructor.
+
+- Related weirdness: feels weird coming from other languages that
+  `unordered_map[]` will *insert a value* (based on the empty constructor) for
+  the key if one isn't already present. I get why, and the individual decisions
+  that lead to this make sense in isolation. `[]` returns `T&`, cool, makes
+  sense. `map[k] = v` is basically sugar for `auto a = map[k]; *a = v;` (because
+  there is no `operator[]=`), so `map[k]` needs to return a reference to an
+  actual entry, so it needs to insert *something* to return a reference *to*.
+
+  I get it, and I get that I'm kind of complaining about different idioms, but
+  it does feel very odd that *access can mutate a collection* (e.g. If I do
+  `map[k]` but don't assign, I may very well now have a new, empty value in my
+  map). And it's where the need for an empty constructor comes from, which
+  semantically I find a bit irritating since in many cases an "empty" value for
+  a type wouldn't be valid from a business-logic POV, so why should you be
+  forced to make it possible to construct a semantically-invalid instance?
+  "empty values" were always something I found a bit irritating in Go as well.
+
+- String output for types. Similar to custom hash above, the fact that the way
+  to implement this is a "(string) cast" is a bit esoteric and could be
+  onboarded better, but not a huge deal.
+
+  The bigger deal is that implementing that conversion isn't enough to then do
+  something like `cout << foo`: you *also* need to implement `ostream&
+  operator<<(MyType)`. I'm sure there's a good reason, but this does feel like
+  something the language should be able to handle automatically once you've
+  defined a cast to string.
+
+  In addition, lots of stdlib types don't implement these! So if you want to
+  print, like, a `vector`, you need to do it yourself. Again, I get why - C++
+  isn't really *meant* for quick-and-dirty programs, but these kinds of
+  weaknesses make it that much harder to quickly get down ideas and then iterate
+  on them. Rust's type system does a much better job of this kind of thing since
+  its stdlib containers can be implemented to know "as long as I know how to
+  stringify my contents I can stringify myself", and even for custom types a lot
+  of the boilerplate can be derived.
+
+- Related to that, the stdlib in general feels surprisingly bare bones. `map`
+  and its related types didn't get a `contains(x)` function until C++20! Not
+  that `m.find(x) != m.end()` is a lot more code And AFAIK there *still* isn't a
+  builtin for getting the set of keys in a map. It's little ergonomic stuff like
+  this that's just missing all over the place and adds a bit more friction to
+  writing your own logic.
+
+- The holes in the stdlib are made even more painful by the lack of any kind of
+  attempt at a package manager or cohesive library directory. (I may be offbase
+  on this criticism: I am aware of vspkg, but haven't really used it much. My
+  impression is it isn't that widely used? Good on MS for the effort, though!)
+
+  This complaint is not at all surprising to anybody even slightly familiar with
+  the language, of course, but I think it still bears discussion. The reasons
+  why are obvious: C++ predates the web, and so has accumulated a culture where
+  centralized library management just isn't expected. C++ (unlike Ruby, Rust,
+  Python, etc.) also doesn't have a single organization that is responsible for
+  its implementation that would be likely to take on the necessary work, and the
+  stakeholders responsible for the language spec aren't concerned with it
+  either. There's lots of good legacy reasons why C++ has never gotten an
+  official package manager, and probably never will.
+
+  But compared to other languages available in 2022, it remains a defect! Rust,
+  to take the obvious example, is in some instances able to get away with a less
+  comprehensive stdlib precisely because it has such a good package manager. For
+  example, C++ added `<regex>` to the stdlib in C++11, and nowadays that seems
+  pretty important since for a lot of common programming tasks regular
+  expressions seems like table stakes. Rust still doesn't have regular
+  expressions in stdlib and probably never will, because it doesn't need them:
+  the `regex` crate is high quality and can be installed with `cargo` with
+  little effort. And because `cargo` is first-party and widely used, even a rust
+  newbie can probably find the crate & figure out how to install it in a few
+  minutes of googling.
+
+- Some terminology and behavior feels unnecessarily obtuse. E.g. lvalue vs
+  rvalue makes enough sense when you're thinking about `x = y`, but the knock-on
+  effects of the distinctions, the fact that what's an lvalue or an rvalue is a
+  lot less intuitive in other types of expressions, and the fact that the syntax
+  to distinguish them can feel a bit obscure causes footguns. E.g. I wrote a
+  function to take an input stream reference (`istream&`) as an input. Calling
+  with a temporary (rvalue) like `foo(istringstream{"bar"})` fails to compile -
+  I either need to assign the istringstream to an intermediate var and pass the
+  var, or change my function to take `istream&&`. Neither is much work, but the
+  temp var feels unnecessary, and like other cases compiler errors could have
+  been clearer. And if I want to support both styles I need to overload the
+  method. Just feels a bit unnecessarily pedantic - I constructed a value and am
+  passing the value, the compiler should be able to figure it out.
+
+- Some idioms are a bit obscure. E.g. for an iterator over a set/vector, you
+  apparently the idiomatic way to get the actual value is to deference it. E.g.
+  if your iterator is `it`, you get the current value with `*it`. At first I
+  thought this worked because `it` isn't a pointer, but a struct whose first
+  member is a pointer to the value, so dereferencing follows that pointer
+  because that's how structs are laid out. After checking some reference docs I
+  think `operator*` is overridden on the iterator type, which is also weird and
+  I'm surprised it's even allowed but it seems like it is.
+
+  But it's structurally weird to dereference a thing of type `Foo` and get `Bar`
+  out, even if I know why it works. It wouldn't seem weird if this was like a
+  weird trick people did sometimes, but it does feel weird that this the
+  standard way to do things. This isn't a major complaint, really, it's fine,
+  it's just feels icky since it feels inconsistent. Especially given modern
+  C++'s focus on type safety and avoidance of raw pointers, it feels weird to
+  have a pretty common case where the standard idiom is "dereference this thing
+  that isn't even a pointer, it'll be fine!" But maybe this is just my
+  old-fashioned familiarity with C and old-school C++ and I'm too strongly
+  associating `*` with "dereference a pointer", and that's not how it should be
+  read in modern C++.
+
+- Still no unit testing framework in the stdlib. Minor frustration, I get the
+  historical & cultural reasons it's not there and unlikely to get added, but
+  it's one more thing making the lang feel "legacy" and another minor bump in
+  getting set up. Just one more battery that should come in the pack but
+  doesn't.
+
+Good:
+
+- Compiler-defaults for copy/move/destructors, etc. are all nice. This is
+  slightly faint praise, since pretty much every other contemporary language
+  does this at least as well.
+- Modern C++'s avoidance of bare pointers really has changed the language for
+  the better *significantly*. (For background, though I've never worked heavily
+  in C++ I did first learn & use it a bit around 2002.) It doesn't *prove*
+  memory-safety at compile time like Rust does (nor does it try), but once you
+  get the patterns you're supposed to follow and follow them it does make the
+  likelihood of a good old-fashioned segfault *much* less likely.
+
+  There's a tradeoff to be made, and I think it's an interesting one. Rust is
+  *extremely* safe, at the cost of a steeper learning curve to grok its
+  ownership model. C++'s learning curve (for RAII, at least) is lower and I
+  think carries a lower cognitive load for ongoing development (though not
+  having maintained large-scale C++ or Rust code that's just my gut feeling),
+  but doesn't as strongly prevent you from shooting yourself in the foot.
+
+Overall, lots to like, but the on-ramps for a newbie are still really, really
+rough. Lots of foot guns without very clear solutions. Docs, compiler errors
+could be drastically better.

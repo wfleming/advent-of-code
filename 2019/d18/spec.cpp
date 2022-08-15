@@ -48,3 +48,15 @@ TEST_CASE("search", "[part1]") {
 
   REQUIRE(path.steps == 86);
 }
+
+TEST_CASE("foo", "fooo") {
+  auto maze = Maze::parse(istringstream{sample_input});
+
+  auto p1 = Path(maze);
+  REQUIRE(p1.keys.size() == 0);
+
+  auto p2 = Path(p1);
+  p2.keys.insert('a');
+  REQUIRE(p2.keys.size() == 1);
+  REQUIRE(p1.keys.size() == 0);
+}

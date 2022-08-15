@@ -93,7 +93,10 @@ class Maze {
 
     Maze():
       // is there a more concise way to say this? I'm surprised I can't omit the
-      // types and do unordered_set<>{...}
+      // types and do unordered_set<>{...}. You can just do a list of args to a
+      // constructor, so `floor{{}}` works. Weirdly, that's fine for `floor` and
+      // `doors`, but breaks my algorithm for `keys` - not sure what it does
+      // differently.
       floor{unordered_set<Point>()},
       doors{unordered_map<Point, char>()},
       keys{unordered_map<Point, char>()},
