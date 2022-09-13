@@ -138,6 +138,7 @@ Map = Struct.new(:floor, :amphipods) do
     super.tap do |c|
       c[:amphipods] = amphipods.map(&:clone)
       c.instance_variable_set(:@steps, steps.clone)
+      c.instance_variable_set(:@hash, nil)
     end
   end
 
@@ -192,7 +193,7 @@ Map = Struct.new(:floor, :amphipods) do
   end
 
   def hash
-    amphipods.hash
+    @hash ||= amphipods.hash
   end
 
   def ==(other)
@@ -204,12 +205,12 @@ end
 # djikstra to get efficient paths from a given floor tile to all other floor tiles
 # this is intended to be cached and then re-checked as needed, so it ignores
 # current positions of amphipods
-def paths_from(map, pos)
+def paths_from(map, start_pos)
   dist = Hash.new(Float::INFINITY)
   prev = {}
 
-  dist[pos] = 0
-  queue = [pos]
+  dist[start_pos] = 0
+  queue = [start_pos]
 
   while queue.any?
     u = queue.shift
@@ -236,7 +237,9 @@ def paths_from(map, pos)
     # never stop where you're blocking a room
     map.blocking_room?(dest) ||
       # never stop in a hallway if you started there
-      (map.hallway?(pos) && map.hallway?(dest))
+      (map.hallway?(start_pos) && map.hallway?(dest)) ||
+      # never start and stop in the same goal room
+      map.goal_rooms.any? { |_type, ps| ps.include?(start_pos) && ps.include?(dest) }
   end
 
   # paths are currently reverse of the logical dir. doesn't actually matter for
