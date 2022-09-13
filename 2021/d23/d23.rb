@@ -123,7 +123,7 @@ Map = Struct.new(:floor, :amphipods) do
   end
 
   # hash of { cur_pos => { dest_pos => [path] } }
-  # path includes cur_pos (i.e. path.count == steps needed)
+  # path includes dest (i.e. path.count == steps needed)
   def all_paths
     @all_paths ||= Hash[
       floor.map do |pos|
@@ -158,7 +158,7 @@ Map = Struct.new(:floor, :amphipods) do
       # puts "#{dest} is in hallway, and we're already there: #{hallway?(a.pos) && hallway?(dest)}"
       # END DEBUG
       # can't walk through an amphipod
-      other_amphipod_pos.include?(dest) || path.any? { |path_pos| other_amphipod_pos.include?(path_pos) } ||
+      path.any? { |path_pos| other_amphipod_pos.include?(path_pos) } ||
         # don't walk into other's goal rooms
         goal_rooms.any? { |type, goal_ps| type != a.type && goal_ps.include?(dest) } ||
         # if walking into goal room, go all the way if you can. Alternatively,
@@ -228,8 +228,8 @@ def paths_from(map, start_pos)
   # transform prev hash into { dest => [path] } for each dest
   paths = {}
   prev.keys.each do |dest|
-    paths[dest] = [prev[dest]]
-    paths[dest] << prev[paths[dest][-1]] while prev[paths[dest][-1]]
+    paths[dest] = [dest]
+    paths[dest] << prev[paths[dest][-1]] while prev[paths[dest][-1]] != start_pos
   end
 
   # cut out any always-illegal destinations
