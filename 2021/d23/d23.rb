@@ -160,8 +160,6 @@ Map = Struct.new(:floor, :amphipods) do
       path.any? { |path_pos| other_amphipod_pos.include?(path_pos) } ||
         # don't walk into other's goal rooms
         goal_rooms.any? { |type, goal_ps| type != a.type && goal_ps.include?(dest) } ||
-        # if in the hallway right now, don't move to other hallway spots
-        hallway?(a.pos) && hallway?(dest) ||
         # if walking into goal room, go all the way if you can. Alternatively,
         # don't walk into goal room if you'd block a different type in your own
         # goal room.
@@ -233,8 +231,13 @@ def paths_from(map, pos)
     paths[dest] << prev[paths[dest][-1]] while prev[paths[dest][-1]]
   end
 
-  # cut out any always-illegal destinations (i.e. blocking a room)
-  paths.reject! { |dest, _path| map.blocking_room?(dest) }
+  # cut out any always-illegal destinations
+  paths.reject! do |dest, path|
+    # never stop where you're blocking a room
+    map.blocking_room?(dest) ||
+      # never stop in a hallway if you started there
+      (map.hallway?(pos) && map.hallway?(dest))
+  end
 
   # paths are currently reverse of the logical dir. doesn't actually matter for
   # logic, but makes a diff for debugging and this is all cached so I don't mind
