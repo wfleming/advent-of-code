@@ -20,7 +20,7 @@ end
 Amphipod = Struct.new(:id, :type, :pos)
 
 ENERGIES = { "A" => 1, "B" => 10, "C" => 100, "D" => 1000 }
-Step = Struct.new(:amphipod, :from, :to, :energy) do
+Step = Struct.new(:amphipod_id, :from, :to, :energy) do
 end
 
 Map = Struct.new(:floor, :amphipods) do
@@ -91,7 +91,16 @@ Map = Struct.new(:floor, :amphipods) do
   end
 
   def hallway?(pos)
-    floor.include?(pos) && !goal_rooms.any? { |_,v| v.include?(pos) }
+    @hallway ||= {}
+    @hallway[pos] ||= floor.include?(pos) && !goal_rooms.any? { |_,v| v.include?(pos) }
+  end
+
+  def goal_room_entrance_y
+    @goal_room_entrance_y ||= goal_rooms.first.last.map(&:y).max
+  end
+
+  def goal_room_back_y
+    @goal_room_back_y ||= goal_rooms.first.last.map(&:y).min
   end
 
   def goal?
@@ -100,20 +109,32 @@ Map = Struct.new(:floor, :amphipods) do
 
   # sum of distances to nearest open goal times energy to move that distance
   def goal_distance
-    amphipods.map do |a|
+    amphipods.sum do |a|
       if goal_rooms.fetch(a.type).include?(a.pos)
         0
       else
         goal_rooms.fetch(a.type)[0].distance(a.pos) * ENERGIES.fetch(a.type)
       end
-    end.sum
+    end
   end
 
   def energy_spent
     steps.sum(&:energy)
   end
 
+  # hash of { cur_pos => { dest_pos => [path] } }
+  # path includes cur_pos (i.e. path.count == steps needed)
+  def all_paths
+    @all_paths ||= Hash[
+      floor.map do |pos|
+        [pos, paths_from(self, pos)]
+      end
+    ]
+  end
+
   def clone
+    # all ivars are copied by default, so shared memos like all_paths come
+    # along. But some values need special handling.
     super.tap do |c|
       c[:amphipods] = amphipods.map(&:clone)
       c.instance_variable_set(:@steps, steps.clone)
@@ -123,56 +144,47 @@ Map = Struct.new(:floor, :amphipods) do
   def movable_amphipods
     # never move the just-moved amphipod since we move them as much as possible
     # each time
-    steps.empty? ? amphipods : amphipods.reject { |a| a.id == steps.last.amphipod.id }
+    steps.empty? ? amphipods : amphipods.reject { |a| a.id == steps.last.amphipod_id }
   end
 
   def next_states_for_amphipod(a)
     # do a flood fill of all legal reachable floor spots
-    destinations = []
-    dest_queue = [a.pos]
-    while dest_queue.any?
-      n = dest_queue.shift
-      n_next = n.neighbors.reject do |p|
-        # basic "is this spot a floor and unoccupied" check
-        !floor.include?(p) || amphipods.any? { |a2| a2.pos == p } ||
-          # don't walk into others goal rooms (unless you're already there)
-          goal_rooms.any? { |type, ps| type != a.type && ps.include?(p) && !ps.include?(a.pos) } ||
-          # don't re-walk already-found destinations
-          destinations.find { |d| d[:pos] == p } || dest_queue.include?(p)
-      end
-      dest_queue += n_next
-      n_cost = destinations.find { |d| d[:pos] == n }&.[](:steps) || 0
-      # TODO - do I need to update add an already-seen dest with lower cost?
-      n_next.each do |nn|
-        destinations << { pos: nn, steps: n_cost + 1 }
-      end
-    end
-    # rules to reject destinations that were valid transient steps:
-    destinations = destinations.reject do |pair|
-      # don't block rooms
-      blocking_room?(pair[:pos])
-    end.reject do |pair|
-      # if walking into home room, go all the way if you can. Alternatively,
-      # don't walk into home room if you'd block a different type in your own
-      # home room.
-      # TODO - this isn't fully correct for part 2, rooms are bigger
-      goal_room_entrance = goal_rooms.fetch(a.type).max_by(&:y)
-      goal_room_back = goal_rooms.fetch(a.type).min_by(&:y)
-      pair[:pos] == goal_room_entrance && (
-        amphipods.none? { |a2| a2.pos == goal_room_back } ||
-        amphipods.any? { |a2| a2.type != a.type && a2.pos == goal_room_back }
-      )
-    end.reject do |pair|
-      # if in the hallway right now, don't move to other hallway spots
-      hallway?(a.pos) && hallway?(pair[:pos])
+    other_amphipod_pos = amphipods.reject { |a2| a2 == a }.map(&:pos).to_set
+    available_paths = all_paths.fetch(a.pos).reject do |dest, path|
+      # DEBUG
+      # puts "#{dest} runs into other ampihpods: #{path.any? { |path_pos| other_amphipod_pos.include?(path_pos) }}"
+      # puts "#{dest} walks into other goal room: #{goal_rooms.any? { |type, goal_ps| type != a.type && goal_ps.include?(dest) && !goal_ps.include?(a.pos) }}"
+      # puts "#{dest} is in hallway, and we're already there: #{hallway?(a.pos) && hallway?(dest)}"
+      # END DEBUG
+      # can't walk through an amphipod
+      path.any? { |path_pos| other_amphipod_pos.include?(path_pos) } ||
+        # don't walk into other's goal rooms
+        goal_rooms.any? { |type, goal_ps| type != a.type && goal_ps.include?(dest) } ||
+        # if in the hallway right now, don't move to other hallway spots
+        hallway?(a.pos) && hallway?(dest) ||
+        # if walking into goal room, go all the way if you can. Alternatively,
+        # don't walk into goal room if you'd block a different type in your own
+        # goal room.
+        begin
+          cur_goal_room = goal_rooms.fetch(a.type)
+          # DEBUG
+          # puts "#{dest} would be own goal: #{cur_goal_room.include?(dest)}"
+          # puts "#{dest} isn't far enough back: #{cur_goal_room.any? { |p| p.y < dest.y && !other_amphipod_pos.include?(p) }}"
+          # puts "#{dest} would block other type: #{amphipods.any? { |a2| a2.type != a.type && cur_goal_room.include?(a2.pos) }}"
+          # END DEBUG
+          cur_goal_room.include?(dest) && (
+            # open floors further back check
+            cur_goal_room.any? { |p| p.y < dest.y && !other_amphipod_pos.include?(p) } ||
+            # other amphipods in our room
+            amphipods.any? { |a2| a2.type != a.type && cur_goal_room.include?(a2.pos) }
+          )
+        end
     end
 
-    # puts "#{destinations.count} possible destinations for amphipod #{a}"
-    # puts to_s
-    destinations.map do |pair|
+    available_paths.map do |dest, path|
       self.clone.tap do |c|
-        c.steps << Step.new(a, a.pos, pair[:pos], ENERGIES.fetch(a.type) * pair[:steps])
-        c.amphipods[c.amphipods.find_index(a)].pos = pair[:pos]
+        c.steps << Step.new(a.id, a.pos, dest, ENERGIES.fetch(a.type) * path.count)
+        c.amphipods.find { |a2| a2.id == a.id }.pos = dest
       end
     end
   end
@@ -189,6 +201,45 @@ Map = Struct.new(:floor, :amphipods) do
     amphipods == other.amphipods
   end
   alias eql? ==
+end
+
+# djikstra to get efficient paths from a given floor tile to all other floor tiles
+# this is intended to be cached and then re-checked as needed, so it ignores
+# current positions of amphipods
+def paths_from(map, pos)
+  dist = Hash.new(Float::INFINITY)
+  prev = {}
+
+  dist[pos] = 0
+  queue = [pos]
+
+  while queue.any?
+    u = queue.shift
+
+    u.neighbors.select { |p| map.floor.include?(p) }.each do |p|
+      new_dist = dist[u] + 1
+      if new_dist < dist[p]
+        dist[p] = new_dist
+        prev[p] = u
+        queue << p
+      end
+    end
+  end
+
+  # transform prev hash into { dest => [path] } for each dest
+  paths = {}
+  prev.keys.each do |dest|
+    paths[dest] = [prev[dest]]
+    paths[dest] << prev[paths[dest][-1]] while prev[paths[dest][-1]]
+  end
+
+  # cut out any always-illegal destinations (i.e. blocking a room)
+  paths.reject! { |dest, _path| map.blocking_room?(dest) }
+
+  # paths are currently reverse of the logical dir. doesn't actually matter for
+  # logic, but makes a diff for debugging and this is all cached so I don't mind
+  # the slight inefficiency.
+  paths.transform_values(&:reverse)
 end
 
 # https://en.wikipedia.org/wiki/A*_search_algorithm
@@ -238,10 +289,10 @@ end
 if __FILE__ == $0
   map_str = File.read(ARGV[0])
   map0 = Map.parse(map_str)
-  g = find_goal(map0)
-  puts "p1: spent #{g[-1].energy_spent} energy"
+  g = find_goal(map0)[-1]
+  puts "p1: spent #{g.energy_spent} energy"
 
   p2_map0 = Map.parse(p2_map(map_str))
-  g = find_goal(map0)
-  puts "p2: spent #{g[-1].energy_spent} energy"
+  g = find_goal(map0)[-1]
+  puts "p2: spent #{g.energy_spent} energy"
 end
