@@ -158,7 +158,7 @@ Map = Struct.new(:floor, :amphipods) do
       # puts "#{dest} is in hallway, and we're already there: #{hallway?(a.pos) && hallway?(dest)}"
       # END DEBUG
       # can't walk through an amphipod
-      path.any? { |path_pos| other_amphipod_pos.include?(path_pos) } ||
+      other_amphipod_pos.include?(dest) || path.any? { |path_pos| other_amphipod_pos.include?(path_pos) } ||
         # don't walk into other's goal rooms
         goal_rooms.any? { |type, goal_ps| type != a.type && goal_ps.include?(dest) } ||
         # if walking into goal room, go all the way if you can. Alternatively,
