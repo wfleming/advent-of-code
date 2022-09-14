@@ -72,6 +72,34 @@ describe MapState do
       _(ns.count).must_equal(1)
       _(ns[0].amphipods.find { |a2| a2.id == a.id }.pos == Point.new(3,1)).must_equal(true)
     end
+
+    it "it correctly won't move into home when another amphipod is there" do
+      input = <<~STR
+      #############
+      #.A........A#
+      ###.#.#C#D###
+        #B#B#C#D#
+        #########
+      STR
+      mapstate0 = MapState.parse(input)
+      a = mapstate0.amphipods.find { |a| a.type == "A" && a.pos.x == 2 }
+      ns = mapstate0.next_states_for_amphipod(a)
+      _(ns.count).must_equal(0)
+    end
+
+    it "it correctly constrains the options" do
+      input = <<~STR
+      #############
+      #...B......A#
+      ###.#.#C#D###
+        #A#B#C#D#
+        #########
+      STR
+      mapstate0 = MapState.parse(input)
+      a = mapstate0.amphipods.find { |a| a.type == "A" && a.pos.x == 3 }
+      ns = mapstate0.next_states_for_amphipod(a)
+      _(ns.count).must_equal(2)
+    end
   end
 end
 
