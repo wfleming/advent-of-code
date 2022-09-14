@@ -108,6 +108,7 @@ class MapState {
     bool is_goal() const;
     unsigned long energy_spent() const;
     vector<Amphipod> movable_amphipods() const;
+    vector<MapState> next_states_for_amphipod(const Amphipod& amphipod);
     vector<MapState> next_states();
 };
 

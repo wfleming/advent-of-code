@@ -222,7 +222,9 @@ MapState MapState::parse(istream&& in) {
   string line;
   while (in.good()) {
     getline(in, line);
-    lines.insert(lines.begin(), line);
+    if (line.size() > 0) {
+      lines.insert(lines.begin(), line);
+    }
   }
 
   // iterate over the lines we read and construct the data
@@ -306,9 +308,9 @@ vector<Amphipod> MapState::movable_amphipods() const {
   }
 }
 
-vector<MapState> next_states_for_amphipod(MapState& mapstate, const Amphipod& amphipod) {
+vector<MapState> MapState::next_states_for_amphipod(const Amphipod& amphipod) {
   unordered_set<Point> other_amphipod_positions;
-  for (auto a : mapstate.amphipods) {
+  for (auto a : amphipods) {
     if (a.id != amphipod.id) {
       other_amphipod_positions.insert(a.pos);
     }
@@ -316,14 +318,14 @@ vector<MapState> next_states_for_amphipod(MapState& mapstate, const Amphipod& am
 
   vector<MapState> states;
 
-  for (auto& dest_path : mapstate.map->all_paths()[amphipod.pos]) {
+  for (auto& dest_path : map->all_paths()[amphipod.pos]) {
     // skip any path that would walk into another amphipod
     if (any_of(dest_path.second.begin(), dest_path.second.end(), [other_amphipod_positions](auto p) { return other_amphipod_positions.contains(p); })) {
       continue;
     }
 
     auto other_goal_room_dest = any_of(
-      mapstate.map->goal_rooms().begin(), mapstate.map->goal_rooms().end(),
+      map->goal_rooms().begin(), map->goal_rooms().end(),
       [amphipod, dest_path](auto goal_pair) {
         return goal_pair.first != amphipod.type && find(goal_pair.second.begin(), goal_pair.second.end(), dest_path.first) != goal_pair.second.end();
       }
@@ -331,7 +333,7 @@ vector<MapState> next_states_for_amphipod(MapState& mapstate, const Amphipod& am
     if (other_goal_room_dest) { continue; }
 
 
-    auto cur_goal_room = mapstate.map->goal_rooms().at(amphipod.type);
+    auto cur_goal_room = map->goal_rooms().at(amphipod.type);
     auto dest_in_goal_room = (find(cur_goal_room.begin(), cur_goal_room.end(), dest_path.first) != cur_goal_room.end());
     if (dest_in_goal_room) {
       for (auto goal_room_pos : cur_goal_room) {
@@ -339,13 +341,13 @@ vector<MapState> next_states_for_amphipod(MapState& mapstate, const Amphipod& am
         if (goal_room_pos.y < dest_path.first.y && !other_amphipod_positions.contains(goal_room_pos)) {
           continue;
         } // don't go into our goal room if some other type amphipod is still there
-        else if (any_of(mapstate.amphipods.begin(), mapstate.amphipods.end(), [&goal_room_pos, &amphipod](auto a){ return a.type != amphipod.type && goal_room_pos == a.pos; })) {
+        else if (any_of(amphipods.begin(), amphipods.end(), [&goal_room_pos, &amphipod](auto a){ return a.type != amphipod.type && goal_room_pos == a.pos; })) {
           continue;
         }
       }
     }
 
-    auto new_state = MapState{mapstate};
+    auto new_state = MapState{*this};
     auto new_state_amphipod = find_if(new_state.amphipods.begin(), new_state.amphipods.end(), [amphipod](auto a) { return a.id == amphipod.id; });
     new_state_amphipod->pos = dest_path.first;
     new_state.steps.push_back(Step{amphipod.id, amphipod.pos, dest_path.first, energy_costs.at(amphipod.type) * dest_path.second.size()});
@@ -359,7 +361,7 @@ vector<MapState> next_states_for_amphipod(MapState& mapstate, const Amphipod& am
 vector<MapState> MapState::next_states() {
   vector<MapState> rv{};
   for (auto a : movable_amphipods()) {
-    auto a_ns = next_states_for_amphipod(*this, a);
+    auto a_ns = next_states_for_amphipod(a);
     copy(a_ns.begin(), a_ns.end(), back_inserter(rv));
   }
   return rv;
@@ -408,10 +410,14 @@ optional<MapState> find_goal(const MapState& init_state) {
 #ifndef IS_TEST
 int main(int argc, char** argv) {
   if (argc < 2) {
-    std::cerr << "Error: no input filename provided." << std::endl;
+    cerr << "Error: no input filename provided." << endl;
     return 1;
   }
   auto state0 = MapState::parse(ifstream{argv[1]});
+
+  for(auto f : state0.map->floor) {
+    cout << f << endl;
+  }
 
   cout << "DEBUG: starting find_goal" << endl;
   auto p1_goal = find_goal(state0);
