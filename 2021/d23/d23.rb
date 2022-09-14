@@ -136,7 +136,7 @@ MapState = Struct.new(:map, :amphipods) do
       if map.goal_rooms.fetch(a.type).include?(a.pos)
         0
       else
-        map.goal_rooms.fetch(a.type)[0].distance(a.pos) * ENERGIES.fetch(a.type)
+        map.all_paths.fetch(a.pos).fetch(map.goal_rooms.fetch(a.type)[0]).count * ENERGIES.fetch(a.type)
       end
     end
   end
