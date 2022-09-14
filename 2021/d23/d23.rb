@@ -23,32 +23,18 @@ ENERGIES = { "A" => 1, "B" => 10, "C" => 100, "D" => 1000 }
 Step = Struct.new(:amphipod_id, :from, :to, :energy) do
 end
 
-Map = Struct.new(:floor, :amphipods) do
-  def self.parse(str)
-    floor = Set.new
-    amphipods = []
-
-    str.lines.reverse.each_with_index do |line, y|
-      line.each_char.with_index do |c, x|
-        if c == "."
-          floor << Point.new(x,y)
-        elsif /[A-Z]/ =~ c
-          floor << Point.new(x,y)
-          amphipods << Amphipod.new(amphipods.any? ? amphipods.last.id + 1: 0, c, Point.new(x,y))
-        end
-      end
-    end
-
-    Map.new(floor, amphipods)
-  end
-
-  attr_reader :goal_rooms, :steps
+Map = Struct.new(:floor) do
+  attr_reader :goal_rooms
 
   def initialize(*args)
     super
 
-    # hash of type => [positions]
-    @goal_rooms =
+    @steps = []
+  end
+
+  # hash of type => [positions]
+  def goal_rooms
+    @goal_rooms ||=
       begin
         # rooms are the only floor squares with walls to left & right
         rooms = floor.select { |f| !floor.include?(Point.new(f.x - 1, f.y)) && !floor.include?(Point.new(f.x + 1, f.y)) }
@@ -60,28 +46,6 @@ Map = Struct.new(:floor, :amphipods) do
           "D" => rooms.select { |r| r.x == xs[3] },
         }
       end
-    @steps = []
-  end
-
-  def to_s
-    y_range = floor.map(&:y).minmax
-    x_range = floor.map(&:x).minmax
-
-    ((y_range[0] - 1)..(y_range[1] + 1)).map do |y|
-      ((x_range[0] - 1)..(x_range[1] + 1)).map do |x|
-        if (a = amphipods.find { |a| a.pos == Point.new(x,y) })
-          a.type
-        elsif floor.include?(Point.new(x,y))
-          "."
-        elsif Point.new(x,y).neighbors.any? { |p| floor.include?(p) }
-          "#"
-        elsif [Point.new(x-1, y-1), Point.new(x+1, y-1), Point.new(x+1, y+1), Point.new(x-1, y+1)].any? { |p| floor.include?(p) } # consider diagnoals to floor
-          "#"
-        else
-          " "
-        end
-      end.join("")
-    end.reverse.join("\n")
   end
 
   def blocking_room?(pos)
@@ -103,25 +67,6 @@ Map = Struct.new(:floor, :amphipods) do
     @goal_room_back_y ||= goal_rooms.first.last.map(&:y).min
   end
 
-  def goal?
-    amphipods.all? { |a| goal_rooms.fetch(a.type).include?(a.pos) }
-  end
-
-  # sum of distances to nearest open goal times energy to move that distance
-  def goal_distance
-    amphipods.sum do |a|
-      if goal_rooms.fetch(a.type).include?(a.pos)
-        0
-      else
-        goal_rooms.fetch(a.type)[0].distance(a.pos) * ENERGIES.fetch(a.type)
-      end
-    end
-  end
-
-  def energy_spent
-    steps.sum(&:energy)
-  end
-
   # hash of { cur_pos => { dest_pos => [path] } }
   # path includes dest (i.e. path.count == steps needed)
   def all_paths
@@ -130,6 +75,74 @@ Map = Struct.new(:floor, :amphipods) do
         [pos, paths_from(self, pos)]
       end
     ]
+  end
+end
+
+MapState = Struct.new(:map, :amphipods) do
+  def self.parse(str)
+    floor = Set.new
+    amphipods = []
+
+    str.lines.reverse.each_with_index do |line, y|
+      line.each_char.with_index do |c, x|
+        if c == "."
+          floor << Point.new(x,y)
+        elsif /[A-Z]/ =~ c
+          floor << Point.new(x,y)
+          amphipods << Amphipod.new(amphipods.any? ? amphipods.last.id + 1: 0, c, Point.new(x,y))
+        end
+      end
+    end
+
+    self.new(Map.new(floor), amphipods)
+  end
+
+  attr_reader :steps
+
+  def initialize(*args)
+    super
+
+    @steps = []
+  end
+
+  def to_s
+    y_range = map.floor.map(&:y).minmax
+    x_range = map.floor.map(&:x).minmax
+
+    ((y_range[0] - 1)..(y_range[1] + 1)).map do |y|
+      ((x_range[0] - 1)..(x_range[1] + 1)).map do |x|
+        if (a = amphipods.find { |a| a.pos == Point.new(x,y) })
+          a.type
+        elsif map.floor.include?(Point.new(x,y))
+          "."
+        elsif Point.new(x,y).neighbors.any? { |p| map.floor.include?(p) }
+          "#"
+        elsif [Point.new(x-1, y-1), Point.new(x+1, y-1), Point.new(x+1, y+1), Point.new(x-1, y+1)].any? { |p| map.floor.include?(p) } # consider diagonals to floor
+          "#"
+        else
+          " "
+        end
+      end.join("")
+    end.reverse.join("\n")
+  end
+
+  def goal?
+    amphipods.all? { |a| map.goal_rooms.fetch(a.type).include?(a.pos) }
+  end
+
+  # sum of distances to nearest open goal times energy to move that distance
+  def goal_distance
+    amphipods.sum do |a|
+      if map.goal_rooms.fetch(a.type).include?(a.pos)
+        0
+      else
+        map.goal_rooms.fetch(a.type)[0].distance(a.pos) * ENERGIES.fetch(a.type)
+      end
+    end
+  end
+
+  def energy_spent
+    steps.sum(&:energy)
   end
 
   def clone
@@ -151,7 +164,7 @@ Map = Struct.new(:floor, :amphipods) do
   def next_states_for_amphipod(a)
     # do a flood fill of all legal reachable floor spots
     other_amphipod_pos = amphipods.reject { |a2| a2 == a }.map(&:pos).to_set
-    available_paths = all_paths.fetch(a.pos).reject do |dest, path|
+    available_paths = map.all_paths.fetch(a.pos).reject do |dest, path|
       # DEBUG
       # puts "#{dest} runs into other ampihpods: #{path.any? { |path_pos| other_amphipod_pos.include?(path_pos) }}"
       # puts "#{dest} walks into other goal room: #{goal_rooms.any? { |type, goal_ps| type != a.type && goal_ps.include?(dest) && !goal_ps.include?(a.pos) }}"
@@ -160,12 +173,12 @@ Map = Struct.new(:floor, :amphipods) do
       # can't walk through an amphipod
       path.any? { |path_pos| other_amphipod_pos.include?(path_pos) } ||
         # don't walk into other's goal rooms
-        goal_rooms.any? { |type, goal_ps| type != a.type && goal_ps.include?(dest) } ||
+        map.goal_rooms.any? { |type, goal_ps| type != a.type && goal_ps.include?(dest) } ||
         # if walking into goal room, go all the way if you can. Alternatively,
         # don't walk into goal room if you'd block a different type in your own
         # goal room.
         begin
-          cur_goal_room = goal_rooms.fetch(a.type)
+          cur_goal_room = map.goal_rooms.fetch(a.type)
           # DEBUG
           # puts "#{dest} would be own goal: #{cur_goal_room.include?(dest)}"
           # puts "#{dest} isn't far enough back: #{cur_goal_room.any? { |p| p.y < dest.y && !other_amphipod_pos.include?(p) }}"
@@ -249,20 +262,23 @@ def paths_from(map, start_pos)
 end
 
 # https://en.wikipedia.org/wiki/A*_search_algorithm
-def find_goal(map0)
+def find_goal(init_state)
+  i = 0
   open_set = PQueue.new()
-  open_set.push(map0, map0.goal_distance)
+  open_set.push(init_state, init_state.goal_distance)
 
   came_from = {}
-  g_scores = {map0 => 0}
-  f_scores = {map0 => map0.goal_distance}
+  g_scores = {init_state => 0}
+  f_scores = {init_state => init_state.goal_distance}
 
   while open_set.any?
     n = open_set.shift
+    i += 1
     # puts "a*: queue=#{open_set.count} n.f_score=#{n.energy_spent + n.goal_distance} n.g_score=#{n.energy_spent}"
     # puts n.to_s
 
     if n.goal?
+      puts "found goal after considering #{i} states"
       path = [n]
       while came_from.include?(n)
         n = came_from[n]
@@ -294,11 +310,11 @@ end
 
 if __FILE__ == $0
   map_str = File.read(ARGV[0])
-  map0 = Map.parse(map_str)
-  g = find_goal(map0)[-1]
+  mapstate0 = MapState.parse(map_str)
+  g = find_goal(mapstate0)[-1]
   puts "p1: spent #{g.energy_spent} energy"
 
-  p2_map0 = Map.parse(p2_map(map_str))
-  g = find_goal(map0)[-1]
+  p2_mapstate0 = MapState.parse(p2_map(map_str))
+  g = find_goal(p2_mapstate0)[-1]
   puts "p2: spent #{g.energy_spent} energy"
 end
