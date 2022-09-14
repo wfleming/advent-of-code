@@ -61,7 +61,7 @@ Step::Step(unsigned int amphipod_id, Point from, Point to, unsigned long energy)
       energy{energy} {}
 
 Map::Map(unordered_set<Point> floor): floor{floor} {}
-Map::~Map() { cout << "DEBUG: Map deconstructor" << endl; }
+Map::~Map() { /* cout << "DEBUG: Map deconstructor" << endl; */ }
 
 bool Map::is_floor(const Point& pt) const {
   return floor.contains(pt);
@@ -69,10 +69,8 @@ bool Map::is_floor(const Point& pt) const {
 
 unordered_map<char, vector<Point>>& Map::goal_rooms() {
   if (_goal_rooms.empty()) {
-    cout << "DEBUG: goal_rooms is empty, building it" << endl;
     vector<Point> all_room_tiles{};
     // rooms are the only floor squares with walls to left & right
-    cout << "DEBUG: building goal_rooms tile count before copy=" << all_room_tiles.size() << " (all floor=" << floor.size() << ")" << endl;
     copy_if(
       floor.begin(), floor.end(), back_inserter(all_room_tiles),
       [this](auto p) {
@@ -80,7 +78,6 @@ unordered_map<char, vector<Point>>& Map::goal_rooms() {
         return !is_floor(left_pt) && !is_floor(right_pt);
       }
     );
-    cout << "DEBUG: building goal_rooms tile count after copy=" << all_room_tiles.size() << endl;
     vector<char> types{'A', 'B', 'C', 'D'};
     vector<int> x_vals{};
 
@@ -377,12 +374,17 @@ optional<MapState> find_goal(const MapState& init_state) {
   vector<MapState> queue{init_state};
   make_heap(queue.begin(), queue.end(), heap_comp);
 
+  unsigned long i = 0;
   while (!queue.empty()) {
     pop_heap(queue.begin(), queue.end(), heap_comp);
     auto n = queue.back();
     queue.pop_back();
+    i++;
 
-    cout << "DEBUG: find_goal f_score=" << f_scores.at(n) << endl;
+    if (i > 40000 && i % 1000 == 0) {
+      cout << "DEBUG: find_goal has considered " << i << " states. current f_score=" << f_scores.at(n) << endl;
+    }
+
     if (n.is_goal()) {
       return optional{n};
     }
@@ -414,10 +416,6 @@ int main(int argc, char** argv) {
     return 1;
   }
   auto state0 = MapState::parse(ifstream{argv[1]});
-
-  for(auto f : state0.map->floor) {
-    cout << f << endl;
-  }
 
   cout << "DEBUG: starting find_goal" << endl;
   auto p1_goal = find_goal(state0);
