@@ -136,7 +136,11 @@ MapState = Struct.new(:map, :amphipods) do
       if map.goal_rooms.fetch(a.type).include?(a.pos)
         0
       else
-        map.all_paths.fetch(a.pos).fetch(map.goal_rooms.fetch(a.type)[0]).count * ENERGIES.fetch(a.type)
+        # NB: I tried using the all_paths distances instead of manhattan
+        # distances. That greatly sped up A* and found a goal faster, but while
+        # it was still correct for the example it was the wrong answer on my
+        # input.
+        map.goal_rooms.fetch(a.type)[0].distance(a.pos) * ENERGIES.fetch(a.type)
       end
     end
   end
