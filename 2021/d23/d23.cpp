@@ -68,21 +68,15 @@ bool Map::is_floor(const Point& pt) const {
 }
 
 unordered_map<char, vector<Point>>& Map::goal_rooms() {
-  cout << "DEBUG: goal_rooms entry" << endl;
-  cout << "DEBUG: current _goal_rooms size=" << _goal_rooms.size() << endl;
-  for (auto pair : _goal_rooms) {
-    cout << "DEBUG: goal room entry key=" << pair.first << endl;
-  }
   if (_goal_rooms.empty()) {
     cout << "DEBUG: goal_rooms is empty, building it" << endl;
     vector<Point> all_room_tiles{};
     // rooms are the only floor squares with walls to left & right
-    cout << "DEBUG: building goal_rooms tile count before copy=" << all_room_tiles.size() << endl;
+    cout << "DEBUG: building goal_rooms tile count before copy=" << all_room_tiles.size() << " (all floor=" << floor.size() << ")" << endl;
     copy_if(
-      floor.begin(), floor.end(), all_room_tiles.begin(),
+      floor.begin(), floor.end(), back_inserter(all_room_tiles),
       [this](auto p) {
         auto left_pt = Point{p.x - 1, p.y}, right_pt = Point{p.x + 1, p.y};
-        cout << "DEBUG: copy_if inner for p=" << p << " left=" << left_pt << " right=" << right_pt << endl;
         return !is_floor(left_pt) && !is_floor(right_pt);
       }
     );
@@ -100,14 +94,13 @@ unordered_map<char, vector<Point>>& Map::goal_rooms() {
     for (size_t i = 0; i < types.size(); i++) {
       vector<Point> type_goal_room_tiles{};
       copy_if(
-          all_room_tiles.begin(), all_room_tiles.end(), type_goal_room_tiles.begin(),
+          all_room_tiles.begin(), all_room_tiles.end(), back_inserter(type_goal_room_tiles),
           [&x_vals, &i](auto p) { return p.x == x_vals[i]; }
       );
       _goal_rooms[types[i]] = type_goal_room_tiles;
     }
   }
 
-  cout << "DEBUG: goal_rooms is going to return the constructed hash" << endl;
   return _goal_rooms;
 }
 
@@ -217,7 +210,7 @@ unordered_map<Point, unordered_map<Point, vector<Point>>>& Map::all_paths() {
   return _all_paths;
 }
 
-MapState::MapState(Map& map, vector<Amphipod> amphipods): map{map}, amphipods{amphipods} {}
+MapState::MapState(shared_ptr<Map> map, vector<Amphipod> amphipods): map{map}, amphipods{amphipods} {}
 MapState::MapState(const MapState& other): map{other.map}, amphipods{vector<Amphipod>{other.amphipods}} {}
 
 MapState MapState::parse(istream&& in) {
@@ -252,10 +245,8 @@ MapState MapState::parse(istream&& in) {
   }
 
   auto map = Map{floor};
-  cout << "DEBUG: parse, constructed map" << endl;
-  map.goal_rooms();
-  cout << "DEBUG: parse, map goal rooms called" << endl;
-  return MapState{map, amphipods};
+  auto map_p = make_shared<Map>(map);
+  return MapState{map_p, amphipods};
 }
 
 MapState& MapState::operator=(MapState other) {
@@ -278,9 +269,7 @@ unsigned long MapState::goal_distance() const {
   return accumulate(
     amphipods.begin(), amphipods.end(), (unsigned long)0,
     [this](auto memo, auto a) {
-      cout << "DEBUG goal_distance inner_loop" << endl;
-      auto a_type_goal_room = this->map.goal_rooms().at(a.type);
-      cout << "DEBUG fetched goal room details" << endl;
+      auto a_type_goal_room = this->map->goal_rooms().at(a.type);
       if (find(a_type_goal_room.begin(), a_type_goal_room.end(), a.pos) != a_type_goal_room.end()) {
         return memo;
       } else {
@@ -294,7 +283,7 @@ bool MapState::is_goal() const {
   return all_of(
     amphipods.begin(), amphipods.end(),
     [this](auto a) {
-      auto a_type_goal_room = this->map.goal_rooms().at(a.type);
+      auto a_type_goal_room = this->map->goal_rooms().at(a.type);
       return find(a_type_goal_room.begin(), a_type_goal_room.end(), a.pos) != a_type_goal_room.end();
     }
   );
@@ -310,7 +299,7 @@ vector<Amphipod> MapState::movable_amphipods() const {
   } else {
     vector<Amphipod> rv;
     copy_if(
-        amphipods.begin(), amphipods.end(), rv.begin(),
+        amphipods.begin(), amphipods.end(), back_inserter(rv),
         [this](auto a) { return a.id != steps.back().amphipod_id; }
     );
     return rv;
@@ -327,14 +316,14 @@ vector<MapState> next_states_for_amphipod(MapState& mapstate, const Amphipod& am
 
   vector<MapState> states;
 
-  for (auto& dest_path : mapstate.map.all_paths()[amphipod.pos]) {
+  for (auto& dest_path : mapstate.map->all_paths()[amphipod.pos]) {
     // skip any path that would walk into another amphipod
     if (any_of(dest_path.second.begin(), dest_path.second.end(), [other_amphipod_positions](auto p) { return other_amphipod_positions.contains(p); })) {
       continue;
     }
 
     auto other_goal_room_dest = any_of(
-      mapstate.map.goal_rooms().begin(), mapstate.map.goal_rooms().end(),
+      mapstate.map->goal_rooms().begin(), mapstate.map->goal_rooms().end(),
       [amphipod, dest_path](auto goal_pair) {
         return goal_pair.first != amphipod.type && find(goal_pair.second.begin(), goal_pair.second.end(), dest_path.first) != goal_pair.second.end();
       }
@@ -342,7 +331,7 @@ vector<MapState> next_states_for_amphipod(MapState& mapstate, const Amphipod& am
     if (other_goal_room_dest) { continue; }
 
 
-    auto cur_goal_room = mapstate.map.goal_rooms().at(amphipod.type);
+    auto cur_goal_room = mapstate.map->goal_rooms().at(amphipod.type);
     auto dest_in_goal_room = (find(cur_goal_room.begin(), cur_goal_room.end(), dest_path.first) != cur_goal_room.end());
     if (dest_in_goal_room) {
       for (auto goal_room_pos : cur_goal_room) {
@@ -391,7 +380,7 @@ optional<MapState> find_goal(const MapState& init_state) {
     auto n = queue.back();
     queue.pop_back();
 
-    cout << "DEBUG: starting find_goal" << endl;
+    cout << "DEBUG: find_goal f_score=" << f_scores.at(n) << endl;
     if (n.is_goal()) {
       return optional{n};
     }

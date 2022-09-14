@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <memory>
 
 using namespace std;
 
@@ -90,11 +91,11 @@ class Map {
 
 class MapState {
   public:
-    Map& map;
+    shared_ptr<Map> map;
     vector<Amphipod> amphipods;
     vector<Step> steps;
 
-    MapState(Map& map, vector<Amphipod> amphipods);
+    MapState(shared_ptr<Map> map, vector<Amphipod> amphipods);
     MapState(const MapState& other);
 
     static MapState parse(istream&& in);
