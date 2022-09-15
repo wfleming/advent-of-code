@@ -1,4 +1,4 @@
-inp w      # input digit 1 to w
+inp w      # INPUT digit 1 to w
 mul x 0    # nop: zero out x (not needed, registers are initialized to 0)
 add x z    # nop: x and z are both 0 at this point, so x is still 0
 mod x 26   # nop: x is still 0!
@@ -15,26 +15,26 @@ mul y 0    # zero out y again
 add y w    # y = w
 add y 13   # y += 13
 mul y x    # y = y * x. x == 1 right now, so nop.
+add z y    # z = y (z is 0 before this)
+inp w      # INPUT digit 2
+mul x 0    # zero x
+add x z    # x = z
+mod x 26   # x = x % 26
+div z 1    # nop
+add x 10   # x += 10
+eql x w    # x = (w == x)
+eql x 0    # x = (x == 0) == (w != x)
+mul y 0    # y = 0
+add y 25   # y = 25
+mul y x    # y = y * x  (either 0 or 1, so y = y or y = 0)
+add y 1    # y += 1
+mul z y    # z = z * y
+mul y 0    # y = 0
+add y w    # y = w
+add y 16   # y + 16
+mul y x    # y = y * x
 add z y    # z += y
-inp w
-mul x 0
-add x z
-mod x 26
-div z 1
-add x 10
-eql x w
-eql x 0
-mul y 0
-add y 25
-mul y x
-add y 1
-mul z y
-mul y 0
-add y w
-add y 16
-mul y x
-add z y
-inp w
+inp w      # INPUT digit 3
 mul x 0
 add x z
 mod x 26
@@ -52,7 +52,7 @@ add y w
 add y 2
 mul y x
 add z y
-inp w
+inp w     # INPUT digit 4
 mul x 0
 add x z
 mod x 26
@@ -70,7 +70,7 @@ add y w
 add y 8
 mul y x
 add z y
-inp w
+inp w     # INPUT digit 5
 mul x 0
 add x z
 mod x 26
@@ -88,11 +88,11 @@ add y w
 add y 11
 mul y x
 add z y
-inp w
+inp w     # INPUT digit 6
 mul x 0
 add x z
 mod x 26
-div z 26
+div z 26  # z = z / 26
 add x -11
 eql x w
 eql x 0
@@ -106,7 +106,7 @@ add y w
 add y 6
 mul y x
 add z y
-inp w
+inp w     # INPUT digit 7
 mul x 0
 add x z
 mod x 26
@@ -124,7 +124,7 @@ add y w
 add y 12
 mul y x
 add z y
-inp w
+inp w     # INPUT digit 8
 mul x 0
 add x z
 mod x 26
@@ -142,7 +142,7 @@ add y w
 add y 2
 mul y x
 add z y
-inp w
+inp w     # INPUT digit 9
 mul x 0
 add x z
 mod x 26
@@ -160,7 +160,7 @@ add y w
 add y 2
 mul y x
 add z y
-inp w
+inp w     # INPUT digit 10
 mul x 0
 add x z
 mod x 26
@@ -178,7 +178,7 @@ add y w
 add y 15
 mul y x
 add z y
-inp w
+inp w     # INPUT digit 11
 mul x 0
 add x z
 mod x 26
@@ -196,7 +196,7 @@ add y w
 add y 1
 mul y x
 add z y
-inp w
+inp w     # INPUT digit 12
 mul x 0
 add x z
 mod x 26
@@ -214,7 +214,7 @@ add y w
 add y 10
 mul y x
 add z y
-inp w
+inp w     # INPUT digit 13
 mul x 0
 add x z
 mod x 26
@@ -232,7 +232,7 @@ add y w
 add y 14
 mul y x
 add z y
-inp w
+inp w     # INPUT digit 14
 mul x 0
 add x z
 mod x 26
