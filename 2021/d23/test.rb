@@ -21,10 +21,17 @@ describe MapState do
 
     it "calculates goal rooms" do
       mapstate = MapState.parse(INPUT_1)
-      _(mapstate.map.goal_rooms["A"]).must_equal([Point.new(3,1), Point.new(3,2)])
-      _(mapstate.map.goal_rooms["B"]).must_equal([Point.new(5,1), Point.new(5,2)])
-      _(mapstate.map.goal_rooms["C"]).must_equal([Point.new(7,1), Point.new(7,2)])
-      _(mapstate.map.goal_rooms["D"]).must_equal([Point.new(9,1), Point.new(9,2)])
+      _(mapstate.goal_rooms["A"]).must_equal([[3,1], [3,2]])
+      _(mapstate.goal_rooms["B"]).must_equal([[5,1], [5,2]])
+      _(mapstate.goal_rooms["C"]).must_equal([[7,1], [7,2]])
+      _(mapstate.goal_rooms["D"]).must_equal([[9,1], [9,2]])
+    end
+  end
+
+  describe :amphipods do
+    it "gets the positions" do
+      mapstate = MapState.parse(INPUT_1)
+      _(mapstate.amphipods.count).must_equal(8)
     end
   end
 
@@ -40,6 +47,17 @@ describe MapState do
       mapstate = MapState.parse(input)
       _(mapstate.goal?).must_equal(true)
       _(mapstate.goal_distance).must_equal(0)
+    end
+  end
+
+  describe :all_paths do
+    it "can walk from room to hallway or other rooms" do
+      mapstate = MapState.parse(INPUT_1)
+      paths = mapstate.all_paths.fetch([3,2])
+      _(paths.count).must_equal(13)
+    end
+
+    it "can walk from hallway to rooms" do
     end
   end
 
@@ -66,11 +84,11 @@ describe MapState do
         #########
       STR
       mapstate0 = MapState.parse(input)
-      a = mapstate0.amphipods.find { |a| a.type == "A" && a.pos.x == 2 }
-      ns = mapstate0.next_states_for_amphipod(a)
+      _(mapstate0.map[3][2]).must_equal("A")
+      ns = mapstate0.next_states_for_amphipod([2,3])
       # because of the hallway rule and "don't stop halfway home" rule, there's actually only one option
       _(ns.count).must_equal(1)
-      _(ns[0].amphipods.find { |a2| a2.id == a.id }.pos == Point.new(3,1)).must_equal(true)
+      _(ns[0].map[1][3]).must_equal("A")
     end
 
     it "it correctly won't move into home when another amphipod is there" do
@@ -82,8 +100,8 @@ describe MapState do
         #########
       STR
       mapstate0 = MapState.parse(input)
-      a = mapstate0.amphipods.find { |a| a.type == "A" && a.pos.x == 2 }
-      ns = mapstate0.next_states_for_amphipod(a)
+      ns = mapstate0.next_states_for_amphipod([2,3])
+      # require "debug"; binding.break
       _(ns.count).must_equal(0)
     end
 
@@ -96,8 +114,20 @@ describe MapState do
         #########
       STR
       mapstate0 = MapState.parse(input)
-      a = mapstate0.amphipods.find { |a| a.type == "A" && a.pos.x == 3 }
-      ns = mapstate0.next_states_for_amphipod(a)
+      ns = mapstate0.next_states_for_amphipod([3,1])
+      _(ns.count).must_equal(2)
+    end
+
+    it "sees valid moves" do
+      input = <<~STR
+      #############
+      #A.........B#
+      ###.#.#C#D###
+        #A#B#C#D#
+        ########
+      STR
+      mapstate0 = MapState.parse(input)
+      ns = mapstate0.next_states
       _(ns.count).must_equal(2)
     end
   end
@@ -127,12 +157,25 @@ describe :find_goal do
       #########
     STR
     mapstate0 = MapState.parse(input)
-    a = mapstate0.amphipods.find { |a| a.type == "A" && a.pos.x == 2 }
-    ns = mapstate0.next_states_for_amphipod(a)
     g = find_goal(mapstate0)[-1]
     _(g).wont_be_nil
     _(g.steps.count).must_equal(1) # A should move straight home
     _(g.energy_spent).must_equal(2) # A should move straight home
+  end
+
+  it "finds the goal when it's a bit more difficult" do
+    input = <<~STR
+    #############
+    #...........#
+    ###B#A#C#D###
+      #A#B#C#D#
+      ########
+    STR
+    mapstate0 = MapState.parse(input)
+    g = find_goal(mapstate0)[-1]
+    _(g).wont_be_nil
+    _(g.steps.count).must_equal(3)
+    _(g.energy_spent).must_equal(46)
   end
 
   it "finds the goal from the example" do
@@ -142,7 +185,7 @@ describe :find_goal do
   end
 
   it "finds the p2 goal from the example" do
-    skip("p2 not ready yet -- too slow")
+    skip("p2 wrong on example but right on my input")
     mapstate0 = MapState.parse(p2_map(INPUT_1))
     g = find_goal(mapstate0)[-1]
     _(g.energy_spent).must_equal(44169)
