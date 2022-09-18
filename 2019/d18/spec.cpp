@@ -1,5 +1,4 @@
-#define CATCH_CONFIG_MAIN
-#include <catch.hpp>
+#include <cassert>
 #include "d18.cpp"
 
 const char* sample_input = R"(########################
@@ -9,54 +8,63 @@ const char* sample_input = R"(########################
 ########################
 )";
 
-TEST_CASE("==", "[Point]") {
+void test_point_eq() {
   auto a = Point(1,1), b = Point(1,1), c = Point(1,2), d = Point(1,2);
-  REQUIRE(a == a);
-  REQUIRE(a == b);
-  REQUIRE(c == d);
-  REQUIRE(a != c);
+  assert(a == a);
+  assert(a == b);
+  assert(c == d);
+  assert(a != c);
 }
 
-TEST_CASE("parse", "[Maze]") {
+void test_maze_parse() {
   auto maze = Maze::parse(istringstream{sample_input});
 
-  REQUIRE(maze.start == Point(15,1));
+  assert(maze.start == Point(15,1));
 }
 
-TEST_CASE("find-path-to-a", "[find_path]") {
+void test_find_path_to_a() {
   auto maze = Maze::parse(istringstream{sample_input});
   auto pts = find_path(maze, maze.start, Point(17,1), set<char>{});
 
-  REQUIRE(pts.size() == 3); // 2 steps
+  assert(pts.size() == 3); // 2 steps
 }
 
-TEST_CASE("find-path-to-b", "[find_path]") {
+void test_find_path_to_b() {
   auto maze = Maze::parse(istringstream{sample_input});
   auto pts = find_path(maze, maze.start, Point(11,1), set<char>{});
 
-  REQUIRE(pts.size() == 0); // can't walk to b without the key for A
+  assert(pts.size() == 0); // can't walk to b without the key for A
 
   pts = find_path(maze, maze.start, Point(11,1), set<char>{'a'});
 
-  REQUIRE(pts.size() == 5); // with key a it takes 4 steps
+  assert(pts.size() == 5); // with key a it takes 4 steps
 }
 
-TEST_CASE("search", "[part1]") {
+void test_part_1_search() {
   auto maze = Maze::parse(istringstream{sample_input});
 
   auto path = part1(maze);
 
-  REQUIRE(path.steps == 86);
+  assert(path.steps == 86);
 }
 
-TEST_CASE("foo", "fooo") {
+void test_foo() {
   auto maze = Maze::parse(istringstream{sample_input});
 
   auto p1 = Path(maze);
-  REQUIRE(p1.keys.size() == 0);
+  assert(p1.keys.size() == 0);
 
   auto p2 = Path(p1);
   p2.keys.insert('a');
-  REQUIRE(p2.keys.size() == 1);
-  REQUIRE(p1.keys.size() == 0);
+  assert(p2.keys.size() == 1);
+  assert(p1.keys.size() == 0);
+}
+
+int main(int, char**) {
+  test_point_eq();
+  test_maze_parse();
+  test_find_path_to_a();
+  test_find_path_to_b();
+  test_part_1_search();
+  test_foo();
 }
