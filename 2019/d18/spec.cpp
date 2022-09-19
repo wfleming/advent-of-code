@@ -30,7 +30,7 @@ void test_point_eq() {
 void test_maze_parse() {
   auto maze = Maze::parse(istringstream{sample_input});
 
-  assert(maze.start == Point(15,1));
+  assert(maze.starts == vector<Point>{Point(15,1)});
   assert(!maze.all_paths.empty());
 }
 
@@ -57,46 +57,65 @@ void test_state_equality_and_hashing() {
 void test_part_1_search_sample0() {
   auto maze = Maze::parse(istringstream{sample_input});
 
-  auto path = part1(maze);
+  auto path = find_goal(State{maze});
 
   assert(path.has_value());
   assert(path->steps_count() == 86);
 }
 
-void test_queue_sorting() {
-  auto cmp = [](const State& s1, const State& s2) { return s1.steps_count() > s2.steps_count(); };
-  priority_queue<State, vector<State>, decltype(cmp)> queue{cmp};
-
-  auto maze = Maze::parse(istringstream{sample_input3});
-  auto s0 = State{maze};
-  s0.keys.insert('a');
-  s0.steps.push_back(Step{Point{0,0}, Point{0,0}, 5});
-  queue.push(s0);
-
-  auto s1 = State{maze};
-  s1.keys.insert('b');
-  s1.steps.push_back(Step{Point{0,0}, Point{0,0}, 3});
-  queue.push(s1);
-
-  auto s2 = State{maze};
-  s2.keys.insert('c');
-  s2.steps.push_back(Step{Point{0,0}, Point{0,0}, 4});
-  queue.push(s2);
-
-  assert(queue.top() == s1);
-  queue.pop();
-  assert(queue.top() == s2);
-  queue.pop();
-  assert(queue.top() == s0);
-}
-
 void test_part_1_search_sample3() {
   auto maze = Maze::parse(istringstream{sample_input3});
 
-  auto path = part1(maze);
+  auto path = find_goal(State{maze});
 
   assert(path.has_value());
   assert(path->steps_count() == 136);
+}
+
+const char *p2_sample_input = R"(#######
+#a.#Cd#
+##...##
+##.@.##
+##...##
+#cB#.b#
+#######
+)";
+
+void test_part_2_maze() {
+  auto maze = Maze::parse(istringstream{p2_sample_input});
+  auto maze2=p2maze(maze);
+
+  // print for visual inspection
+  int min_x = 100, max_x = 0, min_y = 100, max_y = 0;
+  for (auto pt : maze2.floor) {
+    if (pt.x < min_x) { min_x = pt.x; }
+    if (pt.x > max_x) { max_x = pt.x; }
+    if (pt.y < min_y) { min_y = pt.y; }
+    if (pt.y > max_y) { max_y = pt.y; }
+  }
+
+  for (auto y = min_y - 1; y <= max_y + 1; y++) {
+    for (auto x = min_x - 1; x <= max_x + 1; x++) {
+      auto p = Point{x,y};
+      if (!maze2.floor.contains(p)) {
+        cout << '#';
+      } else {
+        cout << '.';
+      }
+    }
+
+    cout << endl;
+  }
+}
+
+void test_part_2_search() {
+  auto maze = Maze::parse(istringstream{p2_sample_input});
+  auto maze2 = p2maze(maze);
+
+  auto path = find_goal(State{maze2});
+
+  assert(path.has_value());
+  assert(path->steps_count() == 8);
 }
 
 int main(int, char**) {
@@ -104,8 +123,9 @@ int main(int, char**) {
   test_maze_parse();
   test_sample_initial_next_states();
   test_part_1_search_sample0();
-  test_queue_sorting();
   test_part_1_search_sample3();
+  /* test_part_2_maze(); */
+  test_part_2_search();
 
   cout << "Tests completed" << endl;
 }
