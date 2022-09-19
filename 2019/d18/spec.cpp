@@ -46,13 +46,20 @@ void test_sample_initial_next_states() {
   assert(state1.next_states().size() == 1);
 }
 
+void test_state_equality_and_hashing() {
+  auto maze = Maze::parse(istringstream{sample_input});
+
+  auto s0 = State{maze}, s1 = State{maze};
+  assert(s0 == s1);
+  assert(hash<State>{}(s0) == hash<State>{}(s1));
+}
+
 void test_part_1_search_sample0() {
   auto maze = Maze::parse(istringstream{sample_input});
 
   auto path = part1(maze);
 
   assert(path.has_value());
-  cout << "DEBUG: steps_count=" << path->steps_count() << endl;
   assert(path->steps_count() == 86);
 }
 

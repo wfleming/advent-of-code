@@ -288,14 +288,12 @@ optional<State> find_goal(const State& cur_state) {
     auto s = queue.top();
     queue.pop();
 
-    /* cout << "find_goal loop: queue.size=" << queue.size() << " s.steps_count=" << s.steps_count() << endl; */
-
     if (s.is_complete()) {
       return optional<State>{s};
     }
 
     for (auto n : s.next_states()) {
-      if (!dist.contains(n) || dist.at(n) < n.steps_count()) {
+      if (!dist.contains(n) || n.steps_count() < dist.at(n)) {
         dist.insert_or_assign(n, n.steps_count());
         queue.push(n);
       }
