@@ -9,7 +9,7 @@ spec.bin: *.cpp
 	$(CC) $(CXXFLAGS) -DIS_TEST -o $@ spec.cpp
 
 test: spec.bin
-	./spec.bin --order=rand
+	./spec.bin
 
 d18.bin: d18.cpp
 	$(CC) $(CXXFLAGS) -O2 -o $@ d18.cpp

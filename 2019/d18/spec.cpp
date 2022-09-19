@@ -8,6 +8,17 @@ const char* sample_input = R"(########################
 ########################
 )";
 
+const char* sample_input3 = R"(#################
+#i.G..c...e..H.p#
+########.########
+#j.A..b...f..D.o#
+########@########
+#k.E..a...g..B.n#
+########.########
+#l.F..d...h..C.m#
+#################
+)";
+
 void test_point_eq() {
   auto a = Point(1,1), b = Point(1,1), c = Point(1,2), d = Point(1,2);
   assert(a == a);
@@ -20,51 +31,45 @@ void test_maze_parse() {
   auto maze = Maze::parse(istringstream{sample_input});
 
   assert(maze.start == Point(15,1));
+  assert(!maze.all_paths.empty());
 }
 
-void test_find_path_to_a() {
+void test_sample_initial_next_states() {
   auto maze = Maze::parse(istringstream{sample_input});
-  auto pts = find_path(maze, maze.start, Point(17,1), set<char>{});
+  auto state0 = State{maze};
 
-  assert(pts.size() == 3); // 2 steps
+  // can only walk to key a
+  assert(state0.next_states().size() == 1);
+
+  // from there you can only walk to key b
+  auto state1 = state0.next_states().front();
+  assert(state1.next_states().size() == 1);
 }
 
-void test_find_path_to_b() {
-  auto maze = Maze::parse(istringstream{sample_input});
-  auto pts = find_path(maze, maze.start, Point(11,1), set<char>{});
-
-  assert(pts.size() == 0); // can't walk to b without the key for A
-
-  pts = find_path(maze, maze.start, Point(11,1), set<char>{'a'});
-
-  assert(pts.size() == 5); // with key a it takes 4 steps
-}
-
-void test_part_1_search() {
+void test_part_1_search_sample0() {
   auto maze = Maze::parse(istringstream{sample_input});
 
   auto path = part1(maze);
 
-  assert(path.steps == 86);
+  assert(path.has_value());
+  assert(path->steps_count() == 86);
 }
 
-void test_foo() {
-  auto maze = Maze::parse(istringstream{sample_input});
+void test_part_1_search_sample3() {
+  auto maze = Maze::parse(istringstream{sample_input3});
 
-  auto p1 = Path(maze);
-  assert(p1.keys.size() == 0);
+  auto path = part1(maze);
 
-  auto p2 = Path(p1);
-  p2.keys.insert('a');
-  assert(p2.keys.size() == 1);
-  assert(p1.keys.size() == 0);
+  assert(path.has_value());
+  assert(path->steps_count() == 136);
 }
 
 int main(int, char**) {
   test_point_eq();
   test_maze_parse();
-  test_find_path_to_a();
-  test_find_path_to_b();
-  test_part_1_search();
-  test_foo();
+  test_sample_initial_next_states();
+  test_part_1_search_sample0();
+  test_part_1_search_sample3();
+
+  cout << "Tests completed" << endl;
 }
