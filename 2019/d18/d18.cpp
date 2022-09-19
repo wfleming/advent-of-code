@@ -64,11 +64,16 @@ class Maze {
     unordered_set<Point> floor;
     unordered_map<Point, char> doors;
     unordered_map<Point, char> keys;
+    unordered_map<char, Point> key_positions{};
     Point start;
     unordered_map<Point, unordered_map<Point, Edge>> all_paths;
+    set<char> all_keys{};
 
     static Maze parse(istream&& in) {
-      Maze maze = Maze();
+      unordered_set<Point> floor;
+      unordered_map<Point, char> doors, keys;
+      Point start_pt;
+
       unsigned int y = 0;
       string line;
       while (in.good()) {
@@ -77,22 +82,21 @@ class Maze {
           char c = line[x];
           Point p = Point(x,y);
           if (c == '.') {
-            maze.floor.insert(p);
+            floor.insert(p);
           } else if (c == '@') {
-            maze.floor.insert(p);
-            maze.start = p;
+            floor.insert(p);
+            start_pt = p;
           } else if (isupper(c)) {
-            maze.floor.insert(p);
-            maze.doors[p] = c;
+            floor.insert(p);
+            doors[p] = c;
           } else if (islower(c)) {
-            maze.floor.insert(p);
-            maze.keys[p] = c;
+            floor.insert(p);
+            keys[p] = c;
           }
         }
         y++;
       }
-      maze.all_paths = Maze::build_all_paths(maze);
-      return maze;
+      return Maze{floor, doors, keys, start_pt};
     }
 
 
@@ -159,13 +163,19 @@ class Maze {
       return paths;
     }
 
-    Maze():
-      floor{unordered_set<Point>()},
-      doors{unordered_map<Point, char>()},
-      keys{unordered_map<Point, char>()},
-      start{Point()},
-      all_paths{{}}
-      {};
+    Maze(unordered_set<Point> floor, unordered_map<Point, char> doors, unordered_map<Point, char> keys, Point start):
+      floor{floor},
+      doors{doors},
+      keys{keys},
+      start{start}
+      {
+        all_paths = Maze::build_all_paths(*this);
+
+        for (auto pair : keys) {
+          all_keys.insert(pair.second);
+          key_positions.insert({pair.second, pair.first});
+        }
+      };
 
     bool is_floor(const Point& pt) const {
       return floor.contains(pt);
@@ -217,24 +227,27 @@ struct State {
   // walk to next available keys, return new set of paths
   vector<State> next_states() const {
     vector<State> rv;
+    vector<char> keys_needed;
+    set_difference(maze->all_keys.begin(), maze->all_keys.end(), keys.begin(), keys.end(), back_inserter(keys_needed));
 
-    for (auto avail_path : maze->all_paths.at(pos)) {
-      auto dest = avail_path.first;
-      /* cout << "next_states: from " << pos << " -> to " << dest << endl; */
-      /* cout << "  has_key_already:" << (maze->keys.contains(dest) && keys.contains(maze->keys.at(dest))) << endl; */
-      // don't walk to keys we already have
-      if (keys.contains(maze->keys.at(dest))) { continue; }
+    for (auto key : keys_needed) {
+      auto dest = maze->key_positions.at(key);
+
+      // in part 2 there may not be a path from here to there
+      if (!maze->all_paths.at(pos).contains(dest)) { continue; }
+
+      auto edge = maze->all_paths.at(pos).at(dest);
 
       // reject path if it involves walking through a door we don't have the key
       // for
-      bool blocked_by_door = !includes(keys.begin(), keys.end(), avail_path.second.needed_keys.begin(), avail_path.second.needed_keys.end());
+      bool blocked_by_door = !includes(keys.begin(), keys.end(), edge.needed_keys.begin(), edge.needed_keys.end());
       /* cout << "  blocked_by_door=" << blocked_by_door << endl; */
       if (blocked_by_door) { continue; }
 
       State n = State{*this};
       n.pos = dest;
-      n.keys.insert(maze->keys.at(dest));
-      n.steps.push_back(Step{pos, dest, avail_path.second.cost});
+      n.keys.insert(key);
+      n.steps.push_back(Step{pos, dest, edge.cost});
       rv.push_back(n);
     }
 
