@@ -201,7 +201,7 @@ struct State {
     {};
 
   bool operator==(const State& other) const {
-    return other.steps.size() == steps.size() && other.pos == pos && other.keys == keys;
+    return other.pos == pos && other.keys == keys;
   }
 
   operator std::string() const {
@@ -241,7 +241,6 @@ struct State {
       // reject path if it involves walking through a door we don't have the key
       // for
       bool blocked_by_door = !includes(keys.begin(), keys.end(), edge.needed_keys.begin(), edge.needed_keys.end());
-      /* cout << "  blocked_by_door=" << blocked_by_door << endl; */
       if (blocked_by_door) { continue; }
 
       State n = State{*this};
@@ -274,16 +273,16 @@ template<> struct std::hash<set<char>> {
 
 template<> struct std::hash<State> {
   size_t operator()(const State& s) const noexcept {
-    return hash<Point>{}(s.pos) ^ (s.steps_count() << 1) ^ (hash<set<char>>{}(s.keys) << 2);
+    return hash<Point>{}(s.pos) ^ (hash<set<char>>{}(s.keys) << 2);
   };
 };
 
 optional<State> find_goal(const State& cur_state) {
   auto cmp = [](const State& s1, const State& s2) { return s1.steps_count() > s2.steps_count(); };
   priority_queue<State, vector<State>, decltype(cmp)> queue{cmp};
-  unordered_map<State, unsigned long> g_scores;
+  unordered_map<State, unsigned long> dist;
   queue.push(cur_state);
-  g_scores.insert({cur_state, 0});
+  dist.insert({cur_state, 0});
 
   while (!queue.empty()) {
     auto s = queue.top();
@@ -296,8 +295,8 @@ optional<State> find_goal(const State& cur_state) {
     }
 
     for (auto n : s.next_states()) {
-      if (!g_scores.contains(n) || g_scores.at(n) < n.steps_count()) {
-        g_scores.insert_or_assign(n, n.steps_count());
+      if (!dist.contains(n) || dist.at(n) < n.steps_count()) {
+        dist.insert_or_assign(n, n.steps_count());
         queue.push(n);
       }
     }

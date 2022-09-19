@@ -52,7 +52,35 @@ void test_part_1_search_sample0() {
   auto path = part1(maze);
 
   assert(path.has_value());
+  cout << "DEBUG: steps_count=" << path->steps_count() << endl;
   assert(path->steps_count() == 86);
+}
+
+void test_queue_sorting() {
+  auto cmp = [](const State& s1, const State& s2) { return s1.steps_count() > s2.steps_count(); };
+  priority_queue<State, vector<State>, decltype(cmp)> queue{cmp};
+
+  auto maze = Maze::parse(istringstream{sample_input3});
+  auto s0 = State{maze};
+  s0.keys.insert('a');
+  s0.steps.push_back(Step{Point{0,0}, Point{0,0}, 5});
+  queue.push(s0);
+
+  auto s1 = State{maze};
+  s1.keys.insert('b');
+  s1.steps.push_back(Step{Point{0,0}, Point{0,0}, 3});
+  queue.push(s1);
+
+  auto s2 = State{maze};
+  s2.keys.insert('c');
+  s2.steps.push_back(Step{Point{0,0}, Point{0,0}, 4});
+  queue.push(s2);
+
+  assert(queue.top() == s1);
+  queue.pop();
+  assert(queue.top() == s2);
+  queue.pop();
+  assert(queue.top() == s0);
 }
 
 void test_part_1_search_sample3() {
@@ -69,6 +97,7 @@ int main(int, char**) {
   test_maze_parse();
   test_sample_initial_next_states();
   test_part_1_search_sample0();
+  test_queue_sorting();
   test_part_1_search_sample3();
 
   cout << "Tests completed" << endl;
