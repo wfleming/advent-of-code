@@ -9,6 +9,7 @@ type Point = (i32, i32);
 pub struct Maze {
     pub cells: Vec<Vec<char>>,
     pub edges: BTreeMap<Point, BTreeSet<Point>>,
+    pub level_changes: BTreeMap<(Point, Point), i32>,
     pub entrance: Point,
     pub exit: Point,
 }
@@ -29,6 +30,7 @@ impl Maze {
         let mut maze = Maze {
             cells: lines,
             edges: BTreeMap::new(),
+            level_changes: BTreeMap::new(),
             entrance: (0, 0),
             exit: (0, 0),
         };
@@ -55,6 +57,29 @@ impl Maze {
                         maze.entrance = (x as i32, y as i32);
                     } else if maze.cell_at(&n1) == 'Z' && maze.cell_at(&n2) == 'Z' {
                         maze.exit = (x as i32, y as i32);
+                    }
+                }
+            }
+        }
+
+        // calculate the floor bounds so we can then calculate the level jumps easily
+        let (mut min_x, mut max_x, mut min_y, mut max_y) = (100, 0, 100, 0);
+        for (from, _neighbors) in &maze.edges {
+            if from.0 < min_x { min_x = from.0 };
+            if from.0 > max_x { max_x = from.0 };
+            if from.1 < min_y { min_y = from.1 };
+            if from.1 > max_y { max_y = from.1 };
+        }
+
+        // calculate the level jumps
+        for (from, neighbors) in &maze.edges {
+            for n in neighbors {
+                if (n.0 - from.0).abs() > 1 || (n.1 - from.1).abs() > 1 {
+                    // outside edges decrease level, inside edges increase it
+                    if from.0 == min_x || from.0 == max_x || from.1 == min_y || from.1 == max_y {
+                        maze.level_changes.insert((*from, *n), -1);
+                    } else {
+                        maze.level_changes.insert((*from, *n), 1);
                     }
                 }
             }
@@ -124,24 +149,24 @@ impl Maze {
 }
 
 #[derive(Eq)]
-struct HeapWrapper {
-    pub pt: Point,
+struct HeapWrapper<T: Eq> {
+    pub pt: T,
     pub cost: i32,
 }
 
-impl PartialEq for HeapWrapper {
+impl<T: Eq> PartialEq for HeapWrapper<T> {
     fn eq(&self, other: &Self) -> bool {
         self.pt == other.pt
     }
 }
 
-impl PartialOrd for HeapWrapper {
+impl<T: Eq> PartialOrd for HeapWrapper<T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for HeapWrapper {
+impl<T: Eq> Ord for HeapWrapper<T> {
     fn cmp(&self, other: &Self) -> Ordering {
         other.cost.cmp(&self.cost)
     }
@@ -150,7 +175,7 @@ impl Ord for HeapWrapper {
 pub fn find_path(maze: &Maze) -> Vec<Point> {
     let mut dist: BTreeMap<Point, i32> = BTreeMap::new();
     let mut prev: BTreeMap<Point, Point> = BTreeMap::new();
-    let mut queue: BinaryHeap<HeapWrapper> = BinaryHeap::new();
+    let mut queue: BinaryHeap<HeapWrapper<Point>> = BinaryHeap::new();
 
     dist.insert(maze.entrance, 0);
     queue.push(HeapWrapper {
@@ -175,6 +200,45 @@ pub fn find_path(maze: &Maze) -> Vec<Point> {
                 dist.insert(*n, d);
                 prev.insert(*n, p);
                 queue.push(HeapWrapper { pt: *n, cost: d });
+            }
+        }
+    }
+
+    panic!("Failed to find path");
+}
+
+pub fn find_path_p2(maze: &Maze) -> Vec<(Point, i32)> {
+    let mut dist: BTreeMap<(Point, i32), i32> = BTreeMap::new();
+    let mut prev: BTreeMap<(Point, i32), (Point, i32)> = BTreeMap::new();
+    let mut queue: BinaryHeap<HeapWrapper<(Point, i32)>> = BinaryHeap::new();
+
+    dist.insert((maze.entrance, 0), 0);
+    queue.push(HeapWrapper {
+        pt: (maze.entrance, 0),
+        cost: 0,
+    });
+
+    while !queue.is_empty() {
+        let s = queue.pop().expect("queue is not empty").pt;
+
+        if s == (maze.exit, 0) {
+            let mut path = vec![s];
+            while path[0].0 != maze.entrance {
+                path.insert(0, prev[&path[0]]);
+            }
+            return path;
+        }
+
+        for n in &maze.edges[&s.0] {
+            let l = if maze.level_changes.contains_key(&(s.0, *n)) { s.1 + maze.level_changes[&(s.0, *n)] } else { s.1 };
+            if l < 0 { continue; } // can't go more out than outermost layer
+            let new_s = (*n, l);
+            let d = dist[&s] + 1;
+
+            if !dist.contains_key(&new_s) || d < dist[&new_s] {
+                dist.insert(new_s, d);
+                prev.insert(new_s, s);
+                queue.push(HeapWrapper { pt: new_s, cost: d });
             }
         }
     }
@@ -283,5 +347,57 @@ YN......#               VT..#....QG
         let m = Maze::from_str(SAMPLE_INPUT2);
         let p = find_path(&m);
         assert_eq!(p.len(), 59); // 58 steps
+    }
+
+    #[test]
+    fn test_find_path_p2_sample1() {
+        let m = Maze::from_str(SAMPLE_INPUT1);
+        let p = find_path_p2(&m);
+        assert_eq!(p.len(), 27); // 26 steps.
+    }
+
+const SAMPLE_INPUT3: &str = "             Z L X W       C
+             Z P Q B       K
+  ###########.#.#.#.#######.###############
+  #...#.......#.#.......#.#.......#.#.#...#
+  ###.#.#.#.#.#.#.#.###.#.#.#######.#.#.###
+  #.#...#.#.#...#.#.#...#...#...#.#.......#
+  #.###.#######.###.###.#.###.###.#.#######
+  #...#.......#.#...#...#.............#...#
+  #.#########.#######.#.#######.#######.###
+  #...#.#    F       R I       Z    #.#.#.#
+  #.###.#    D       E C       H    #.#.#.#
+  #.#...#                           #...#.#
+  #.###.#                           #.###.#
+  #.#....OA                       WB..#.#..ZH
+  #.###.#                           #.#.#.#
+CJ......#                           #.....#
+  #######                           #######
+  #.#....CK                         #......IC
+  #.###.#                           #.###.#
+  #.....#                           #...#.#
+  ###.###                           #.#.#.#
+XF....#.#                         RF..#.#.#
+  #####.#                           #######
+  #......CJ                       NM..#...#
+  ###.#.#                           #.###.#
+RE....#.#                           #......RF
+  ###.###        X   X       L      #.#.#.#
+  #.....#        F   Q       P      #.#.#.#
+  ###.###########.###.#######.#########.###
+  #.....#...#.....#.......#...#.....#.#...#
+  #####.#.###.#######.#######.###.###.#.#.#
+  #.......#.......#.#.#.#.#...#...#...#.#.#
+  #####.###.#####.#.#.#.#.###.###.#.###.###
+  #.......#.....#.#...#...............#...#
+  #############.#.#.###.###################
+               A O F   N
+               A A D   M";
+
+    #[test]
+    fn test_find_path_p2_sample3() {
+        let m = Maze::from_str(SAMPLE_INPUT3);
+        let p = find_path_p2(&m);
+        assert_eq!(p.len(), 397); // 26 steps.
     }
 }
