@@ -19,7 +19,7 @@ fn run_programs(intcode_tape: &tape::Tape, botcode: &str) {
           if o < 255 {
               print!("{}", (o as u8) as char);
           } else {
-              println!("\n\np1: hull damage is {}", o);
+              println!("\n\nhull damage is {}", o);
           }
       }
       os = m.outputs.len();
