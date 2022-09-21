@@ -55,6 +55,13 @@ impl Machine {
         }
     }
 
+    pub fn run_until_exit_or_output(&mut self) {
+        let os = self.outputs.len();
+        while !self.is_exited() && self.outputs.len() == os {
+            self.step();
+        }
+    }
+
     pub fn outputs_to_s(&self) -> Vec<String> {
         self.outputs.iter().map(|x| x.to_str_radix(10)).collect()
     }
