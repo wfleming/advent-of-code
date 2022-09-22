@@ -33,7 +33,7 @@ pub fn incr_deal(d: Deck, n: usize) -> Deck {
         .collect()
 }
 
-pub fn execute_shuffle(mut d: Deck, steps: Vec<&str>) -> Deck {
+pub fn execute_shuffle(mut d: Deck, steps: &Vec<&str>) -> Deck {
     for s in steps {
         if s.trim() == "deal into new stack" {
             d = stack_deal(d);
@@ -93,7 +93,7 @@ mod tests {
             "deal into new stack",
             "deal into new stack",
         ];
-        let d2 = execute_shuffle(d, steps);
+        let d2 = execute_shuffle(d, &steps);
         assert_eq!(d2, vec![0, 3, 6, 9, 2, 5, 8, 1, 4, 7]);
     }
 
@@ -101,7 +101,7 @@ mod tests {
     fn test_execute_shuffle_sample2() {
         let d = new_deck(10);
         let steps = vec!["cut 6", "deal with increment 7", "deal into new stack"];
-        let d2 = execute_shuffle(d, steps);
+        let d2 = execute_shuffle(d, &steps);
         assert_eq!(d2, vec![3, 0, 7, 4, 1, 8, 5, 2, 9, 6]);
     }
 
@@ -109,7 +109,7 @@ mod tests {
     fn test_execute_shuffle_sample3() {
         let d = new_deck(10);
         let steps = vec!["deal with increment 7", "deal with increment 9", "cut -2"];
-        let d2 = execute_shuffle(d, steps);
+        let d2 = execute_shuffle(d, &steps);
         assert_eq!(d2, vec![6, 3, 0, 7, 4, 1, 8, 5, 2, 9]);
     }
 
@@ -128,7 +128,7 @@ mod tests {
             "deal with increment 3",
             "cut -1",
         ];
-        let d2 = execute_shuffle(d, steps);
+        let d2 = execute_shuffle(d, &steps);
         assert_eq!(d2, vec![9, 2, 5, 8, 1, 4, 7, 0, 3, 6]);
     }
 }

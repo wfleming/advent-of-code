@@ -1,0 +1,22 @@
+# part 2
+
+Two challenges here:
+
+1. The deck is way too large to actually simulate a shuffle, even once
+2. The number of repetitions is *also* way too high to actually do, even once 1 is solved.
+
+The first item is easier: each type of shuffle can pretty easily be reversed
+(increment might be tricky), so you can work backwards from an index y to what
+it would have been in a previous step.
+
+reversing increment: https://www.reddit.com/r/adventofcode/comments/ee56wh/2019_day_22_part_2_so_whats_the_purpose_of_this/fbrjt19/
+
+The second item is harder (for me). From glancing at threads on /r/adventofcode, fermat's little theorem seems related?
+
+https://en.wikipedia.org/wiki/Fermat%27s_little_theorem#Generalizations
+
+Seems relevant that the number of repetitions the problem asks for is prime.
+
+I presume that the shuffle is certainly going to arrive back at the original
+order after enough repetitions. If I can find that cycle period, I can figure
+out how many repetitions back I actually have to search through.
