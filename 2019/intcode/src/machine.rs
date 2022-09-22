@@ -10,7 +10,7 @@ use std::vec::Vec;
 pub struct Machine {
     tape: HashMap<BigInt, BigInt>,
     pos: BigInt,
-    inputs: Vec<BigInt>,
+    pub inputs: Vec<BigInt>,
     pub outputs: Vec<BigInt>,
     relative_base: BigInt,
 }

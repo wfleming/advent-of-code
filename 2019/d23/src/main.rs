@@ -58,22 +58,26 @@ fn simulate_computers_p1(instrs: &tape::Tape) -> i32 {
 
 fn simulate_computers_p2(instrs: &tape::Tape) -> i32 {
     let computers = construct_computers(instrs);
+    let mut idle = vec![false; 50];
     let mut nat_packet: (BigInt, BigInt) = (Zero::zero(), Zero::zero());
     let mut last_nat_y: BigInt = Zero::zero();
+    let mut idle_cycle_count = 0;
 
     loop {
-        for cell in &computers {
+        for (i, cell) in computers.iter().enumerate() {
             if cell.borrow().is_exited() {
                 panic!("I didn't expect a machine to exit");
             }
 
             if cell.borrow().is_waiting_for_input() {
+                idle[i] = true;
                 cell.borrow_mut().push_input(filler_input());
             }
 
             let oc = cell.borrow().outputs.len();
             cell.borrow_mut().step();
             if cell.borrow().outputs.len() > oc {
+                idle[i] = false;
                 // a packet started, simulate this machine until it finishes the packet
                 while cell.borrow().outputs.len() < oc + 3 {
                     if cell.borrow().is_waiting_for_input() {
@@ -85,23 +89,40 @@ fn simulate_computers_p2(instrs: &tape::Tape) -> i32 {
                 let oc = cell.borrow().outputs.len();
                 let (a, x, y) = (cell.borrow().outputs[oc - 3].clone(), cell.borrow().outputs[oc - 2].clone(), cell.borrow().outputs[oc - 1].clone());
                 if a == nat_address() {
-                    if y == last_nat_y { // p2 answer
-                        return y.to_i32().unwrap();
-                    }
+                    println!("DEBUG: new nat packet ({}, {})", x, y);
                     nat_packet = (x,y)
                 } else {
+                    // println!("DEBUG: sending packet ({}, {}) to {}", x, y, a);
                     computers[a.to_usize().unwrap()].borrow_mut().push_input(x);
                     computers[a.to_usize().unwrap()].borrow_mut().push_input(y);
                 }
             }
         }
 
-        let all_idle = computers.iter().all(|cell| cell.borrow().is_waiting_for_input() || cell.borrow().inputs.iter().all(|i| i == &filler_input()));
-        if all_idle { // send the nat packet to address 0
+        let all_idle = idle.iter().all(|x| *x);
+        if all_idle && nat_packet.1 != Zero::zero() {
+            println!("DEBUG all computers idle, cycle count {} -> {}", idle_cycle_count, idle_cycle_count + 1);
+            idle_cycle_count += 1;
+        }
+
+        if idle_cycle_count > 2 {
+            println!("DEBUG: NAT sending to 0 ({},{}), last y was {} ({} idle cycles)", nat_packet.0, nat_packet.1, last_nat_y, idle_cycle_count);
+            // send the nat packet to address 0
+            // if nat_packet.1 == last_nat_y { // p2 answer
+            //     return last_nat_y.to_i32().unwrap();
+            // }
+
             last_nat_y = nat_packet.1.clone();
             computers[0].borrow_mut().push_input(nat_packet.0.clone());
             computers[0].borrow_mut().push_input(nat_packet.1.clone());
+            idle_cycle_count = 0;
+            idle[0] = false;
         }
+
+        // let all_idle = computers.iter().all(|cell| cell.borrow().is_waiting_for_input() || cell.borrow().inputs.iter().all(|i| i == &filler_input()));
+        // if all_idle {
+        //     idle_count += 1;
+        // }
     }
 }
 
