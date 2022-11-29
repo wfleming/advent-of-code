@@ -20,3 +20,5 @@ Seems relevant that the number of repetitions the problem asks for is prime.
 I presume that the shuffle is certainly going to arrive back at the original
 order after enough repetitions. If I can find that cycle period, I can figure
 out how many repetitions back I actually have to search through.
+
+I still don't understand how it works, so I'm not copying, but this seems to be a working solution in rust I can try to learn from https://github.com/Aidiakapi/advent_of_code_2019/blob/master/src/day22.rs
