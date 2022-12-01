@@ -23,6 +23,7 @@ all:
 	(cd d22 && ./d22.rb input.txt)
 	(cd d23 && ./d23.rb input.txt)
 	(cd d24 && make run)
+	(cd d25 && make run)
 
 CC=$(shell command -v g++ || command -v clang)
 build_cpp:
