@@ -4,3 +4,4 @@ all:
 	(cd d02 && cargo run input.txt)
 	(cd d03 && cargo run input.txt)
 	(cd d04 && cargo run input.txt)
+	(cd d05 && cargo run input.txt)
