@@ -7,3 +7,4 @@ all:
 	(cd d05 && make)
 	(cd d06 && make)
 	(cd d07 && make)
+	(cd d08 && make)
