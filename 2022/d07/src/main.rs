@@ -9,6 +9,7 @@ enum Entry {
         name: String,
         children: Vec<Rc<RefCell<Entry>>>,
         parent: Option<Rc<RefCell<Self>>>,
+        memo_size: Option<u32>,
     },
     File {
         name: String,
@@ -30,9 +31,21 @@ impl std::fmt::Debug for Entry {
 }
 
 impl Entry {
-    pub fn tot_size(&self) -> u32 {
+    pub fn tot_size(&mut self) -> u32 {
         match self {
-            Self::Dir { children, .. } => children.iter().map(|e| e.borrow().tot_size()).sum(),
+            Self::Dir {
+                children,
+                memo_size,
+                name,
+                ..
+            } => match memo_size {
+                Some(x) => *x,
+                None => {
+                    let x = children.iter().map(|e| e.borrow_mut().tot_size()).sum();
+                    *memo_size = Some(x);
+                    x
+                }
+            },
             Self::File { size, .. } => *size,
         }
     }
@@ -98,6 +111,7 @@ fn simulate_terminal(term: &str) -> Rc<RefCell<Entry>> {
         name: "/".to_string(),
         children: vec![],
         parent: Option::None,
+        memo_size: None,
     }));
     let mut cur_dir = root.clone();
 
@@ -117,6 +131,7 @@ fn simulate_terminal(term: &str) -> Rc<RefCell<Entry>> {
                             name: entry_pieces[1].to_string(),
                             children: vec![],
                             parent: Option::Some(cur_dir.clone()),
+                            memo_size: None,
                         },
                         _ => {
                             let size = entry_pieces[0].parse::<u32>().expect("size is first col");
@@ -161,7 +176,7 @@ fn simulate_terminal(term: &str) -> Rc<RefCell<Entry>> {
 fn p1(fs: Rc<RefCell<Entry>>) -> u32 {
     all_dirs(fs)
         .iter()
-        .map(|e| e.borrow().tot_size())
+        .map(|e| e.borrow_mut().tot_size())
         .filter(|s| *s <= 100_000)
         .sum()
 }
@@ -170,16 +185,16 @@ const CAPACITY: u32 = 70_000_000;
 const SPACE_NEEDED: u32 = 30_000_000;
 
 fn p2(fs: Rc<RefCell<Entry>>) -> u32 {
-    let cur_used = fs.borrow().tot_size();
+    let cur_used = fs.borrow_mut().tot_size();
     let cur_free = CAPACITY - cur_used;
     let needed = SPACE_NEEDED - cur_free;
 
     all_dirs(fs)
         .iter()
-        .filter(|e| e.borrow().tot_size() >= needed)
-        .min_by(|a, b| a.borrow().tot_size().cmp(&b.borrow().tot_size()))
+        .filter(|e| e.borrow_mut().tot_size() >= needed)
+        .min_by(|a, b| a.borrow_mut().tot_size().cmp(&b.borrow_mut().tot_size()))
         .expect("should find some deletable dirs")
-        .borrow()
+        .borrow_mut()
         .tot_size()
 }
 
