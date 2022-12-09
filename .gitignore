@@ -2,3 +2,4 @@
 */D*/bin
 *.bin
 target/
+input.txt
