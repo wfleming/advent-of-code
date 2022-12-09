@@ -8,3 +8,4 @@ all:
 	(cd d06 && make)
 	(cd d07 && make)
 	(cd d08 && make)
+	(cd d09 && make)
