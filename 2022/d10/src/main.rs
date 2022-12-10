@@ -1,7 +1,5 @@
 use std::env::args;
 use std::fs;
-use std::rc::Rc;
-
 #[derive(Debug, Clone, Copy)]
 enum Instr {
     Noop,
@@ -27,7 +25,7 @@ impl Instr {
 }
 
 struct Cpu {
-    instrs: Rc<Vec<Instr>>,
+    instrs: Vec<Instr>,
     x: i32,
     cycles_elapsed: u32,
     ip: usize,
@@ -35,7 +33,7 @@ struct Cpu {
 }
 
 impl Cpu {
-    pub fn new(instrs: Rc<Vec<Instr>>) -> Cpu {
+    pub fn new(instrs: Vec<Instr>) -> Cpu {
         let initial_cycles_left = instrs[0].cycle_cost();
         Cpu {
             instrs,
@@ -79,53 +77,8 @@ impl Cpu {
 }
 
 const TRACK_CYCLES: [u32; 6] = [20, 60, 100, 140, 180, 220];
-
-fn p1(instrs: Rc<Vec<Instr>>) {
-    let mut cpu = Cpu::new(instrs);
-    let mut next_cycle_idx = 0;
-    let mut signal_strength_accum: i32 = 0;
-
-    while cpu.cycles_elapsed < TRACK_CYCLES[TRACK_CYCLES.len() - 1] {
-        cpu.step();
-        if cpu.cycles_elapsed == TRACK_CYCLES[next_cycle_idx] {
-            let signal_strength = (TRACK_CYCLES[next_cycle_idx] as i32) * cpu.x;
-            signal_strength_accum += signal_strength;
-            println!("p1: at cycle {} about to exec {}: {:?} reg x has value {} signal strength right now is {}", TRACK_CYCLES[next_cycle_idx], cpu.ip + 1, cpu.cur_instr(), cpu.x, signal_strength);
-            next_cycle_idx += 1;
-        }
-    }
-
-    println!(
-        "p1 total accumulated signal strength is {}",
-        signal_strength_accum
-    );
-}
-
 const ROW_PIXELS: u32 = 40;
 const ROW_COUNT: u32 = 6;
-fn p2(instrs: Rc<Vec<Instr>>) {
-    let mut cpu = Cpu::new(instrs);
-    let mut output = String::new();
-
-    while cpu.cycles_elapsed < ROW_PIXELS * ROW_COUNT {
-        let row_x: i32 = (cpu.cycles_elapsed % ROW_PIXELS) as i32;
-        cpu.step();
-        if cpu.x >= row_x - 1 && cpu.x <= row_x + 1 {
-            output.push('#');
-        } else {
-            output.push(' '); // problem states '.' but this is easier for reading output
-        }
-        if row_x == (ROW_PIXELS - 1) as i32 {
-            output.push('\n');
-        }
-        if cpu.instr_cycles_left == 0 {
-            cpu.step();
-        }
-    }
-
-    println!("p2:\n{}", output);
-}
-
 fn main() {
     let mut args = args();
     args.next();
@@ -136,8 +89,43 @@ fn main() {
         .map(Instr::parse)
         .collect();
 
-    let instrs_rc = Rc::new(instrs);
+    let mut cpu = Cpu::new(instrs);
+    let mut signal_strength_accum: i32 = 0;
+    let mut screen = String::with_capacity((ROW_PIXELS * ROW_COUNT) as usize);
 
-    p1(instrs_rc.clone());
-    p2(instrs_rc);
+    while cpu.cycles_elapsed < ROW_PIXELS * ROW_COUNT {
+        let screen_row_x: i32 = (cpu.cycles_elapsed % ROW_PIXELS) as i32;
+        cpu.step();
+
+        // p1 signal logic
+        if TRACK_CYCLES.contains(&cpu.cycles_elapsed) {
+            let signal_strength = cpu.cycles_elapsed as i32 * cpu.x;
+            signal_strength_accum += signal_strength;
+            println!("p1: at cycle {} about to exec {}: {:?} reg x has value {} signal strength right now is {}", cpu.cycles_elapsed, cpu.ip + 1, cpu.cur_instr(), cpu.x, signal_strength);
+        }
+        if cpu.cycles_elapsed == TRACK_CYCLES[TRACK_CYCLES.len() - 1] {
+            println!(
+                "p1: total accumulated signal strength is {}",
+                signal_strength_accum
+            );
+        }
+
+        // p2 crt logic
+        if cpu.x >= screen_row_x - 1 && cpu.x <= screen_row_x + 1 {
+            screen.push('#');
+        } else {
+            screen.push(' '); // '.' is easier for debugging, but this is easier for reading output
+        }
+        if screen_row_x == (ROW_PIXELS - 1) as i32 {
+            screen.push('\n');
+        }
+
+        // execute the actual instruction in the loop since we depend on cycles_elapsed to draw the
+        // crt, and it doesn't change when the instruction actually happens
+        if cpu.instr_cycles_left == 0 {
+            cpu.step();
+        }
+    }
+
+    println!("p2:\n{}", screen);
 }
