@@ -1,5 +1,6 @@
 use std::env::args;
 use std::fs;
+use std::rc::Rc;
 
 #[derive(Debug, Clone, Copy)]
 enum Instr {
@@ -25,19 +26,19 @@ impl Instr {
     }
 }
 
-struct CPU {
-    instrs: Vec<Instr>,
+struct Cpu {
+    instrs: Rc<Vec<Instr>>,
     x: i32,
     cycles_elapsed: u32,
     ip: usize,
     instr_cycles_left: u8,
 }
 
-impl CPU {
-    pub fn new(instrs: Vec<Instr>) -> CPU {
+impl Cpu {
+    pub fn new(instrs: Rc<Vec<Instr>>) -> Cpu {
         let initial_cycles_left = instrs[0].cycle_cost();
-        CPU {
-            instrs: instrs,
+        Cpu {
+            instrs,
             x: 1,
             cycles_elapsed: 0,
             ip: 0,
@@ -51,21 +52,25 @@ impl CPU {
         }
 
         if self.instr_cycles_left > 0 {
-            // println!("DEBUG: pause cycle={}->{} for instr {:?}", self.cycles_elapsed, self.cycles_elapsed+1, self.instrs[self.ip]);
+            // println!("DEBUG: pause cycle={}->{} for instr {:?}", self.cycles_elapsed, self.cycles_elapsed+1, self.cur_instr());
             self.instr_cycles_left -= 1;
             self.cycles_elapsed += 1;
         } else {
-            // println!("DEBUG: executing instr {:?} after cycle {}", self.instrs[self.ip], self.cycles_elapsed);
-            let instr = self.instrs[self.ip];
+            // println!("DEBUG: executing instr {:?} after cycle {}", self.cur_instr(), self.cycles_elapsed);
+            let instr = self.cur_instr();
             self.exec_instr(&instr);
             self.ip += 1;
             if self.ip < self.instrs.len() {
-                self.instr_cycles_left = self.instrs[self.ip].cycle_cost();
+                self.instr_cycles_left = self.cur_instr().cycle_cost();
             }
         }
     }
 
-    pub fn exec_instr(&mut self, i: &Instr) {
+    pub fn cur_instr(&self) -> Instr {
+        self.instrs[self.ip]
+    }
+
+    fn exec_instr(&mut self, i: &Instr) {
         match i {
             Instr::Noop => (),
             Instr::Addx(x) => self.x += x,
@@ -74,8 +79,9 @@ impl CPU {
 }
 
 const TRACK_CYCLES: [u32; 6] = [20, 60, 100, 140, 180, 220];
-fn p1(instrs: &Vec<Instr>) {
-    let mut cpu = CPU::new(instrs.clone());
+
+fn p1(instrs: Rc<Vec<Instr>>) {
+    let mut cpu = Cpu::new(instrs);
     let mut next_cycle_idx = 0;
     let mut signal_strength_accum: i32 = 0;
 
@@ -84,7 +90,7 @@ fn p1(instrs: &Vec<Instr>) {
         if cpu.cycles_elapsed == TRACK_CYCLES[next_cycle_idx] {
             let signal_strength = (TRACK_CYCLES[next_cycle_idx] as i32) * cpu.x;
             signal_strength_accum += signal_strength;
-            println!("p1: at cycle {} about to exec {}: {:?} reg x has value {} signal strength right now is {}", TRACK_CYCLES[next_cycle_idx], cpu.ip + 1, instrs[cpu.ip], cpu.x, signal_strength);
+            println!("p1: at cycle {} about to exec {}: {:?} reg x has value {} signal strength right now is {}", TRACK_CYCLES[next_cycle_idx], cpu.ip + 1, cpu.cur_instr(), cpu.x, signal_strength);
             next_cycle_idx += 1;
         }
     }
@@ -95,6 +101,31 @@ fn p1(instrs: &Vec<Instr>) {
     );
 }
 
+const ROW_PIXELS: u32 = 40;
+const ROW_COUNT: u32 = 6;
+fn p2(instrs: Rc<Vec<Instr>>) {
+    let mut cpu = Cpu::new(instrs);
+    let mut output = String::new();
+
+    while cpu.cycles_elapsed < ROW_PIXELS * ROW_COUNT {
+        let row_x: i32 = (cpu.cycles_elapsed % ROW_PIXELS) as i32;
+        cpu.step();
+        if cpu.x >= row_x - 1 && cpu.x <= row_x + 1 {
+            output.push('#');
+        } else {
+            output.push(' '); // problem states '.' but this is easier for reading output
+        }
+        if row_x == (ROW_PIXELS - 1) as i32 {
+            output.push('\n');
+        }
+        if cpu.instr_cycles_left == 0 {
+            cpu.step();
+        }
+    }
+
+    println!("p2:\n{}", output);
+}
+
 fn main() {
     let mut args = args();
     args.next();
@@ -102,8 +133,11 @@ fn main() {
     let instrs: Vec<Instr> = fs::read_to_string(input_path)
         .expect("read the file")
         .lines()
-        .map(|l| Instr::parse(l))
+        .map(Instr::parse)
         .collect();
 
-    p1(&instrs);
+    let instrs_rc = Rc::new(instrs);
+
+    p1(instrs_rc.clone());
+    p2(instrs_rc);
 }
