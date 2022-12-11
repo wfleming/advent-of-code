@@ -10,3 +10,4 @@ all:
 	(cd d08 && make)
 	(cd d09 && make)
 	(cd d10 && make)
+	(cd d11 && make)
