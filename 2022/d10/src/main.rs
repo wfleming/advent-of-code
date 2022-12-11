@@ -1,5 +1,6 @@
 use std::env::args;
 use std::fs;
+
 #[derive(Debug, Clone, Copy)]
 enum Instr {
     Noop,
