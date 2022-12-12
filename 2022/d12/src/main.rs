@@ -1,5 +1,4 @@
-use std::cmp::Ordering;
-use std::collections::{BTreeMap, BinaryHeap};
+use std::collections::{BTreeMap, VecDeque};
 use std::env::args;
 use std::fs;
 
@@ -67,55 +66,33 @@ impl Map {
     }
 }
 
-#[derive(PartialEq, Eq)]
-struct HeapWrapper<T: Eq + PartialEq> {
-    pub pt: T,
-    pub cost: u16,
-}
-
-impl<T: Eq> PartialOrd for HeapWrapper<T> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl<T: Eq> Ord for HeapWrapper<T> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        other.cost.cmp(&self.cost)
-    }
-}
-
-fn djikstra(map: &Map, start: Pos, goal: Pos) -> Option<u16> {
+fn djikstra(map: &Map, start: Pos) -> BTreeMap<Pos, u16> {
     let mut dist: BTreeMap<Pos, u16> = BTreeMap::new();
     let mut prev: BTreeMap<Pos, Pos> = BTreeMap::new();
-    let mut queue: BinaryHeap<HeapWrapper<Pos>> = BinaryHeap::new();
+    let mut queue: VecDeque<Pos> = VecDeque::new();
 
     dist.insert(start, 0);
-    queue.push(HeapWrapper { pt: start, cost: 0 });
+    queue.push_back(start);
 
     while !queue.is_empty() {
-        let p = queue.pop().unwrap().pt;
+        let p = queue.pop_front().unwrap();
 
         for p2 in map
             .neighbor_positions(&p)
             .iter()
-            .filter(|n| map.can_move(&p, n))
+            .filter(|n| map.can_move(n, &p))
         {
             let d = dist[&p] + 1;
-
-            if p2 == &goal {
-                return Some(d);
-            }
 
             if !dist.contains_key(p2) || d < dist[p2] {
                 dist.insert(*p2, d);
                 prev.insert(*p2, p);
-                queue.push(HeapWrapper { pt: *p2, cost: d });
+                queue.push_back(*p2);
             }
         }
     }
 
-    None
+    dist
 }
 
 fn main() {
@@ -125,24 +102,25 @@ fn main() {
     let input = fs::read_to_string(input_path).expect("read the file");
     let (map, start_pos, goal_pos) = Map::parse(&input);
 
-    let p1_steps = djikstra(&map, start_pos, goal_pos).expect("found goal");
-    println!("p1: can reach goal in {} steps", p1_steps);
+    let dist = djikstra(&map, goal_pos);
+    println!("p1: can reach goal in {} steps", dist[&start_pos]);
 
-    let potential_hike_starts = map
+    let shortest_hike_length = map
         .0
         .iter()
         .enumerate()
         .flat_map(|(y, row)| {
             row.iter()
                 .enumerate()
-                .filter(|(_x, c)| **c == 'a')
-                .map(|(x, _c)| (x, y))
-                .collect::<Vec<Pos>>()
+                .flat_map(|(x,c)| {
+                    if *c == 'a' {
+                        dist.get(&(x,y))
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<&u16>>()
         })
-        .collect::<Vec<Pos>>();
-    let shortest_hike_length = potential_hike_starts
-        .iter()
-        .filter_map(|p| djikstra(&map, *p, goal_pos))
         .min()
         .expect("There are at least some hikes");
     println!("p2: shortest hike is {} steps", shortest_hike_length);
