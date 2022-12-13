@@ -141,6 +141,24 @@ fn main() {
         "p1: sum of correctly ordered pair indices is {}",
         correct_order_indices.sum::<usize>()
     );
+
+    let mut all_packets: Vec<&PacketChunk> = packet_pairs
+        .iter()
+        .flat_map(|pair| [&pair.0, &pair.1])
+        .collect();
+    let divider1 = PacketChunk::parse(&mut "[[2]]".chars().peekable());
+    let divider2 = PacketChunk::parse(&mut "[[6]]".chars().peekable());
+    all_packets.push(&divider1);
+    all_packets.push(&divider2);
+    all_packets.sort();
+
+    let div1_idx = all_packets.binary_search(&&divider1).unwrap() + 1;
+    let div2_idx = all_packets.binary_search(&&divider2).unwrap() + 1;
+    let decoder_key = div1_idx * div2_idx;
+    println!(
+        "p2: {} is at {}, {} is at {}, decoder key is {}",
+        divider1, div1_idx, divider2, div2_idx, decoder_key
+    );
 }
 
 #[cfg(test)]
