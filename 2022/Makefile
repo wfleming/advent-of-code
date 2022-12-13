@@ -12,3 +12,4 @@ all:
 	(cd d10 && make)
 	(cd d11 && make)
 	(cd d12 && make)
+	(cd d13 && make)
