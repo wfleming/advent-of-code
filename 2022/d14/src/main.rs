@@ -1,8 +1,8 @@
-use std::env::args;
+use std::cmp::{max, min};
 use std::collections::VecDeque;
-use std::fs;
-use std::cmp::{min,max};
+use std::env::args;
 use std::fmt;
+use std::fs;
 use std::iter;
 
 type Pt = (usize, usize);
@@ -25,7 +25,11 @@ struct Cave {
 
 impl Cave {
     pub fn new() -> Cave {
-        Cave { data: Vec::new(), x_min: 0, y_max: 0 }
+        Cave {
+            data: Vec::new(),
+            x_min: 0,
+            y_max: 0,
+        }
     }
 
     pub fn parse(input: &str) -> Cave {
@@ -33,16 +37,16 @@ impl Cave {
 
         for line in input.lines() {
             let mut pts = line.split(" -> ").map(|ps| {
-                let mut pieces = ps.split(",").map(|s| s.parse::<usize>().unwrap());
+                let mut pieces = ps.split(',').map(|s| s.parse::<usize>().unwrap());
                 (pieces.next().unwrap(), pieces.next().unwrap())
             });
 
             let mut from = pts.next().unwrap();
 
-            while let Some(to) = pts.next() {
+            for to in pts {
                 for x in min(from.0, to.0)..=max(from.0, to.0) {
                     for y in min(from.1, to.1)..=max(from.1, to.1) {
-                        cave.set(&(x,y), Mat::Rock);
+                        cave.set(&(x, y), Mat::Rock);
                     }
                 }
                 from = to;
@@ -52,10 +56,9 @@ impl Cave {
         cave
     }
 
-
     pub fn get(&self, pt: &Pt) -> Mat {
         if !self.in_bounds(pt) {
-            return Mat::Air
+            return Mat::Air;
         }
 
         self.data[pt.1][pt.0 - self.x_min]
@@ -92,7 +95,6 @@ impl Cave {
                     row.resize(row.len() + n, Mat::Air);
                 }
             }
-
         }
 
         // actually set the value
@@ -113,30 +115,27 @@ impl Cave {
     }
 
     fn iter(&self) -> CaveIter {
-        CaveIter { cave: self, x: self.x_min, y: 0 }
+        CaveIter {
+            cave: self,
+            x: self.x_min,
+            y: 0,
+        }
     }
 
     // drop a grain of sand, inserting it into self in it's final resting place.
     // returns the final resting place, or None if it ends up going out of bounds.
     pub fn drop_sand(&mut self) -> Option<Pt> {
-        let mut pt = SAND_ENTRY.clone();
-        while let pt2 = self.next_sand_pt(&pt) {
-            match pt2 {
-                None => {
-                    self.set(&pt, Mat::Sand);
-                    return Some(pt);
-                }
-                Some(pt2_p) => {
-                    if !self.in_bounds(&pt2_p) {
-                        return None;
-                    } else {
-                        pt = pt2_p;
-                    }
-                }
+        let mut pt = SAND_ENTRY;
+        while let Some(pt2) = self.next_sand_pt(&pt) {
+            if !self.in_bounds(&pt2) {
+                return None;
+            } else {
+                pt = pt2;
             }
         }
 
-        None
+        self.set(&pt, Mat::Sand);
+        Some(pt)
     }
 
     fn next_sand_pt(&self, pt: &Pt) -> Option<Pt> {
@@ -160,7 +159,13 @@ impl fmt::Display for Cave {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut s = String::new();
 
-        s.push_str(&format!("from ({}, {}) to ({}, {})\n", self.x_min, 0, self.x_max(), self.y_max));
+        s.push_str(&format!(
+            "from ({}, {}) to ({}, {})\n",
+            self.x_min,
+            0,
+            self.x_max(),
+            self.y_max
+        ));
         for (pt, m) in self.iter() {
             if pt == SAND_ENTRY {
                 s.push('+');
@@ -191,7 +196,7 @@ impl<'a> iter::Iterator for CaveIter<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.x > self.cave.x_max() || self.y > self.cave.y_max {
-            return None
+            return None;
         }
 
         let pt = (self.x, self.y);
@@ -208,6 +213,54 @@ impl<'a> iter::Iterator for CaveIter<'a> {
     }
 }
 
+fn p1(cave: &mut Cave) {
+    while cave.drop_sand().is_some() {}
+
+    // println!("{}", &cave);
+
+    let sand_count = cave.iter().fold(
+        0,
+        |acc, (_pt, m)| if m == Mat::Sand { acc + 1 } else { acc },
+    );
+    println!("p1: there are {} units of sand", sand_count);
+}
+
+fn p2(cave: &mut Cave) {
+    let floor_y = cave.y_max + 2;
+
+    // add inital floor
+    for x in cave.x_min - 5..=(cave.x_max() + 5) {
+        cave.set(&(x, floor_y), Mat::Rock);
+    }
+
+    while cave.get(&(SAND_ENTRY)) != Mat::Sand {
+        if cave.drop_sand().is_none() {
+            println!("{}", &cave);
+            let sand_count = cave.iter().fold(
+                0,
+                |acc, (_pt, m)| if m == Mat::Sand { acc + 1 } else { acc },
+            );
+            panic!("sand dropped off bounds in p2, but that shouldn't happen. there are {} particles of sand.", sand_count);
+        }
+
+        // extend the floor if we're getting close to the edge
+        if cave.get(&(cave.x_min + 1, floor_y - 1)) == Mat::Sand {
+            cave.set(&(cave.x_min - 1, floor_y), Mat::Rock);
+        }
+        if cave.get(&(cave.x_max() - 1, floor_y - 1)) == Mat::Sand {
+            cave.set(&(cave.x_max() + 1, floor_y), Mat::Rock);
+        }
+    }
+
+    // println!("{}", &cave);
+
+    let sand_count = cave.iter().fold(
+        0,
+        |acc, (_pt, m)| if m == Mat::Sand { acc + 1 } else { acc },
+    );
+    println!("p2: there are {} units of sand", sand_count);
+}
+
 fn main() {
     let mut args = args();
     args.next();
@@ -215,11 +268,6 @@ fn main() {
     let input = fs::read_to_string(input_path).expect("read the file");
     let mut cave = Cave::parse(&input);
 
-    // for _ in 0..30 { cave.drop_sand(); }
-    while cave.drop_sand() != None {}
-
-    println!("{}", &cave);
-
-    let sand_count = cave.iter().fold(0, |acc, (pt, m)| if m == Mat::Sand { acc + 1 } else { acc });
-    println!("p1: there are {} units of sand", sand_count);
+    p1(&mut cave.clone());
+    p2(&mut cave);
 }
