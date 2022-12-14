@@ -3,4 +3,5 @@
 *.bin
 target/
 input.txt
+sample.txt
 .session
