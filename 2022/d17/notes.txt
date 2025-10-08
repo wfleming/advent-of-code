@@ -1,0 +1,27 @@
+"floor" patterns (there are 14) (highest row with rocks)
+
+####
+#
+ #
+  #
+   #
+##
+# #
+#  #
+ ##
+ # #
+  ##
+###
+## #
+# ##
+
+
+Rocks get 4 jets applied before landing (maybe 5 with some shapes & floot
+patterns?). So there are 16 or 32 possible jet patterns.
+
+So that's 224 or 448 possible scenarios for each rock (5 rock shapes). That's
+not that many, might be faster than simulating.
+
+Except one layer of "floor" pattern isn't enough, and actually I guess a lot
+more jets could be applied to, e.g., the vertical block pieces depending on how
+it works out.

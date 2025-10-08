@@ -15,3 +15,4 @@ all:
 	(cd d13 && make)
 	(cd d14 && make)
 	(cd d15 && make)
+	(cd d17 && make)
