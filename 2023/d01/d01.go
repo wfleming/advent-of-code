@@ -111,14 +111,14 @@ func lineCalibration2(line string) (calibration int, err error) {
 }
 
 func lineCalibrations(lines []string, lineCalc func(string) (int, error)) ([]int, error) {
-	var calibrations []int = []int{}
+	var calibrations []int = make([]int, len(lines))
 
-	for _, l := range lines {
+	for idx, l := range lines {
 		lc, err := lineCalc(l)
 		if err != nil {
 			return []int{}, err
 		}
-		calibrations = append(calibrations, lc)
+		calibrations[idx] = lc
 	}
 
 	return calibrations, nil
