@@ -3,5 +3,7 @@ go 1.25.1
 use (
 	./d01
 	./d02
+	./d03
+	./d03/engine
 	./util
 )
