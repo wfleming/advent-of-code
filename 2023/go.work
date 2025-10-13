@@ -6,5 +6,6 @@ use (
 	./d03
 	./d03/engine
 	./d04
+	./d05
 	./util
 )

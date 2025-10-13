@@ -3,6 +3,7 @@ package util
 import (
 	"errors"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -19,16 +20,33 @@ func InputStr() (content string, err error) {
 	return string(bytes), nil
 }
 
+func SplitLines(content string) []string {
+	lines := []string{}
+	for l := range strings.Lines(content) {
+		lines = append(lines, strings.TrimSpace(l))
+	}
+	return lines
+}
+
+func SpaceSepInts(content string) ([]int, error) {
+	nums := []int{}
+
+	for _, numStr := range strings.Fields(content) {
+		numInt, err := strconv.Atoi(numStr)
+		if err != nil {
+			return []int{}, err
+		}
+		nums = append(nums, numInt)
+	}
+
+	return nums, nil
+}
+
 func InputLines() (lines []string, err error) {
 	content, err := InputStr()
 	if err != nil {
 		return
 	}
 
-	lines = []string{}
-	for l := range strings.Lines(content) {
-		lines = append(lines, strings.TrimSpace(l))
-	}
-
-	return lines, nil
+	return SplitLines(content), nil
 }
